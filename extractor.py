@@ -1,11 +1,17 @@
 import os
 import requests
 import json
+from supabase import create_client, Client
 
-# Pulling credentials directly from GitHub Secrets (No placeholders)
+# Network and Database Credentials
 HUAWEI_EMAIL = os.getenv("HUAWEI_EMAIL")
 HUAWEI_PASSWORD = os.getenv("HUAWEI_PASSWORD")
 PROJECT_ID = os.getenv("PROJECT_ID")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Initialize Database Client
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class HuaweiAutomation:
     def __init__(self):
@@ -33,7 +39,7 @@ class HuaweiAutomation:
         response = self.session.post(login_url, json=payload)
         
         if response.status_code == 200:
-            print("Authentication successful. Session captured.")
+            print("Authentication successful.")
             if 'x-csrf-token' in response.headers:
                 self.csrf_token = response.headers['x-csrf-token']
                 self.session.headers.update({"x-csrf-token": self.csrf_token})
@@ -62,17 +68,38 @@ class HuaweiAutomation:
 
         if response.status_code == 200:
             data = response.json()
-            vouchers = data.get("data", [])
-            print(f"Successfully retrieved {len(vouchers)} active records.")
-            return vouchers
+            return data.get("data", [])
         else:
             print(f"Failed to fetch data. Status Code: {response.status_code}")
             return None
+
+def sync_to_database(vouchers):
+    print(f"Formatting {len(vouchers)} records for database insertion...")
+    db_payload = []
+    
+    for v in vouchers:
+        # Mapping Huawei JSON fields to our Supabase Table structure
+        db_record = {
+            "voucher_code": v.get("userName", ""),
+            "agent_id": v.get("path", "UNKNOWN_AGENT"),
+            "account_status": str(v.get("accountStatus", "0")),
+            "creation_date": v.get("createDate")
+        }
+        # Only add valid vouchers
+        if db_record["voucher_code"]:
+            db_payload.append(db_record)
+
+    if db_payload:
+        print("Pushing data to Supabase...")
+        # Upsert prevents duplicate errors if the script runs multiple times a day
+        result = supabase.table("active_vouchers").upsert(db_payload, on_conflict="voucher_code").execute()
+        print("Database sync complete.")
+    else:
+        print("No valid voucher data found to sync.")
 
 if __name__ == "__main__":
     app = HuaweiAutomation()
     if app.login():
         voucher_data = app.fetch_vouchers()
         if voucher_data:
-            print("\n--- Network Data Payload Successfully Extracted ---")
-            print(json.dumps(voucher_data[0], indent=4))
+            sync_to_database(voucher_data)
