@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 import json
 from supabase import create_client, Client
@@ -9,6 +10,28 @@ HUAWEI_PASSWORD = os.getenv("HUAWEI_PASSWORD")
 PROJECT_ID = os.getenv("PROJECT_ID")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+print("--- INITIALIZING SECURE DIAGNOSTIC CHECK ---")
+
+if not HUAWEI_EMAIL:
+    print("CRITICAL ERROR: HUAWEI_EMAIL is completely blank. GitHub Secrets are failing.")
+    sys.exit(1)
+else:
+    print(f"SUCCESS: Email loaded successfully (Starts with: {HUAWEI_EMAIL[:3]}...)")
+
+if not HUAWEI_PASSWORD:
+    print("CRITICAL ERROR: HUAWEI_PASSWORD is completely blank.")
+    sys.exit(1)
+else:
+    print("SUCCESS: Password loaded successfully.")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("CRITICAL ERROR: Supabase Keys are missing.")
+    sys.exit(1)
+else:
+    print("SUCCESS: Database connection keys loaded.")
+
+print("--- DIAGNOSTIC COMPLETE. PROCEEDING TO LOGIN ---\n")
 
 # Initialize Database Client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -46,12 +69,10 @@ class HuaweiAutomation:
             return True
         else:
             print(f"Authentication failed. Status Code: {response.status_code}")
-            return False
+            # Forcing a crash so GitHub shows a red failure if login fails
+            sys.exit(1) 
 
     def fetch_vouchers(self):
-        if not self.csrf_token:
-            print("Warning: Missing CSRF security token.")
-
         print("Fetching MegaNet WiFi backend API data...")
         list_url = "https://w3m.huawei.com/mcloud/umag/ProxyForText/qiankuncloud_sin/proxy/v1/networkconfigs/guestmgr/guest/list"
         
@@ -71,27 +92,24 @@ class HuaweiAutomation:
             return data.get("data", [])
         else:
             print(f"Failed to fetch data. Status Code: {response.status_code}")
-            return None
+            sys.exit(1)
 
 def sync_to_database(vouchers):
     print(f"Formatting {len(vouchers)} records for database insertion...")
     db_payload = []
     
     for v in vouchers:
-        # Mapping Huawei JSON fields to our Supabase Table structure
         db_record = {
             "voucher_code": v.get("userName", ""),
             "agent_id": v.get("path", "UNKNOWN_AGENT"),
             "account_status": str(v.get("accountStatus", "0")),
             "creation_date": v.get("createDate")
         }
-        # Only add valid vouchers
         if db_record["voucher_code"]:
             db_payload.append(db_record)
 
     if db_payload:
         print("Pushing data to Supabase...")
-        # Upsert prevents duplicate errors if the script runs multiple times a day
         result = supabase.table("active_vouchers").upsert(db_payload, on_conflict="voucher_code").execute()
         print("Database sync complete.")
     else:
@@ -103,3 +121,4 @@ if __name__ == "__main__":
         voucher_data = app.fetch_vouchers()
         if voucher_data:
             sync_to_database(voucher_data)
+ 
