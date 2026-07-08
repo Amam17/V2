@@ -11,29 +11,14 @@ PROJECT_ID = os.getenv("PROJECT_ID")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-print("--- INITIALIZING SECURE DIAGNOSTIC CHECK ---")
+print("--- DIAGNOSTIC CHECK PHASE 2 ---")
+if not HUAWEI_EMAIL: print("ERROR: HUAWEI_EMAIL is blank."); sys.exit(1)
+if not HUAWEI_PASSWORD: print("ERROR: HUAWEI_PASSWORD is blank."); sys.exit(1)
+if not PROJECT_ID: print("ERROR: PROJECT_ID is blank. Target URL will fail."); sys.exit(1)
+if not SUPABASE_URL: print("ERROR: SUPABASE_URL is blank."); sys.exit(1)
+print("SUCCESS: All 5 GitHub Secrets are securely loaded.")
+print("--------------------------------\n")
 
-if not HUAWEI_EMAIL:
-    print("CRITICAL ERROR: HUAWEI_EMAIL is completely blank. GitHub Secrets are failing.")
-    sys.exit(1)
-else:
-    print(f"SUCCESS: Email loaded successfully (Starts with: {HUAWEI_EMAIL[:3]}...)")
-
-if not HUAWEI_PASSWORD:
-    print("CRITICAL ERROR: HUAWEI_PASSWORD is completely blank.")
-    sys.exit(1)
-else:
-    print("SUCCESS: Password loaded successfully.")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print("CRITICAL ERROR: Supabase Keys are missing.")
-    sys.exit(1)
-else:
-    print("SUCCESS: Database connection keys loaded.")
-
-print("--- DIAGNOSTIC COMPLETE. PROCEEDING TO LOGIN ---\n")
-
-# Initialize Database Client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class HuaweiAutomation:
@@ -69,27 +54,19 @@ class HuaweiAutomation:
             return True
         else:
             print(f"Authentication failed. Status Code: {response.status_code}")
-            # Forcing a crash so GitHub shows a red failure if login fails
-            sys.exit(1) 
+            # This line forces Huawei to reveal its internal error reason
+            print(f"HUAWEI SERVER RESPONSE: {response.text}")
+            sys.exit(1)
 
     def fetch_vouchers(self):
         print("Fetching MegaNet WiFi backend API data...")
         list_url = "https://w3m.huawei.com/mcloud/umag/ProxyForText/qiankuncloud_sin/proxy/v1/networkconfigs/guestmgr/guest/list"
-        
-        headers = {
-            "x-project-id": PROJECT_ID,
-            "countrycode": "NG"
-        }
-        
-        payload = {
-            "userType": 6
-        }
+        headers = {"x-project-id": PROJECT_ID, "countrycode": "NG"}
+        payload = {"userType": 6}
 
         response = self.session.post(list_url, json=payload, headers=headers)
-
         if response.status_code == 200:
-            data = response.json()
-            return data.get("data", [])
+            return response.json().get("data", [])
         else:
             print(f"Failed to fetch data. Status Code: {response.status_code}")
             sys.exit(1)
@@ -97,7 +74,6 @@ class HuaweiAutomation:
 def sync_to_database(vouchers):
     print(f"Formatting {len(vouchers)} records for database insertion...")
     db_payload = []
-    
     for v in vouchers:
         db_record = {
             "voucher_code": v.get("userName", ""),
@@ -110,10 +86,10 @@ def sync_to_database(vouchers):
 
     if db_payload:
         print("Pushing data to Supabase...")
-        result = supabase.table("active_vouchers").upsert(db_payload, on_conflict="voucher_code").execute()
+        supabase.table("active_vouchers").upsert(db_payload, on_conflict="voucher_code").execute()
         print("Database sync complete.")
     else:
-        print("No valid voucher data found to sync.")
+        print("No valid voucher data found.")
 
 if __name__ == "__main__":
     app = HuaweiAutomation()
@@ -121,4 +97,3 @@ if __name__ == "__main__":
         voucher_data = app.fetch_vouchers()
         if voucher_data:
             sync_to_database(voucher_data)
- 
