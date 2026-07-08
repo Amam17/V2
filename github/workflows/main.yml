@@ -1,0 +1,27 @@
+name: MegaNet Automation Server
+
+on:
+  workflow_dispatch: 
+
+jobs:
+  extract_network_data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository Architecture
+        uses: actions/checkout@v4
+        
+      - name: Initialize Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Install Network Dependencies
+        run: pip install requests
+          
+      - name: Execute Extraction Pipeline
+        env:
+          HUAWEI_EMAIL: ${{ secrets.HUAWEI_EMAIL }}
+          HUAWEI_PASSWORD: ${{ secrets.HUAWEI_PASSWORD }}
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}
+        run: python extractor.py
