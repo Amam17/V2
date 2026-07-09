@@ -1,29 +1,32 @@
 name: MegaNet Automation Server
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
 
 jobs:
   extract_network_data:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout Repository Architecture
         uses: actions/checkout@v4
-        
+
       - name: Initialize Python Environment
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          
+
       - name: Install Network Dependencies
-        run: pip install requests supabase
-          
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests supabase
+
       - name: Execute Extraction Pipeline
         env:
-          HUAWEI_EMAIL: ${{ secrets.HUAWEI_EMAIL }}
-          HUAWEI_PASSWORD: ${{ secrets.HUAWEI_PASSWORD }}
           PROJECT_ID: ${{ secrets.PROJECT_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          HUAWEI_COOKIE: ${{ secrets.HUAWEI_COOKIE }}
+          HUAWEI_CSRF_TOKEN: ${{ secrets.HUAWEI_CSRF_TOKEN }}
         run: python extractor.py
