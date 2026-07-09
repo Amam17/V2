@@ -3,23 +3,22 @@ import sys
 import requests
 from supabase import create_client, Client
 
-# Network and Database Credentials
-PROJECT_ID = os.getenv("PROJECT_ID")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-HUAWEI_COOKIE = os.getenv("HUAWEI_COOKIE")
-HUAWEI_CSRF_TOKEN = os.getenv("HUAWEI_CSRF_TOKEN")
+# Network and Database Credentials - with .strip() to automatically clean invisible characters
+PROJECT_ID = os.getenv("PROJECT_ID", "").strip()
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
+HUAWEI_COOKIE = os.getenv("HUAWEI_COOKIE", "").strip()
+HUAWEI_CSRF_TOKEN = os.getenv("HUAWEI_CSRF_TOKEN", "").strip()
 
 print("--- INITIATING MEGACORE CLOUD SYNC ---")
 if not all([PROJECT_ID, SUPABASE_URL, SUPABASE_KEY, HUAWEI_COOKIE, HUAWEI_CSRF_TOKEN]):
-    print("CRITICAL ERROR: One or more GitHub Secrets are missing.")
+    print("CRITICAL ERROR: One or more GitHub Secrets are missing or completely blank.")
     sys.exit(1)
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def fetch_vouchers():
     print("Authenticating via injected session tokens...")
-    # Target shifted to the Live Portal User database
     list_url = "https://w3m.huawei.com/mcloud/umag/ProxyForText/qiankuncloud_sin/proxy/v1/network/orchestrate/onlineuser/users"
     
     headers = {
@@ -42,7 +41,6 @@ def fetch_vouchers():
         print("Huawei network connection established. Data extracted.")
         data = response.json().get("data", [])
         
-        # Huawei enterprise endpoints occasionally nest the user array inside a 'list' object
         if isinstance(data, dict):
             data = data.get("list", data.get("records", []))
             
@@ -56,7 +54,6 @@ def sync_to_database(vouchers):
     print(f"Formatting {len(vouchers)} active records for Supabase insertion...")
     db_payload = []
     for v in vouchers:
-        # Dynamic mapping to account for different JSON keys in the new endpoint
         username = v.get("userName", v.get("username", ""))
         
         if username:
