@@ -5,8 +5,9 @@ import re
 import pandas as pd
 from datetime import datetime
 import os
+import numpy as np
 
-PDF_FILE = "vouchers.pdf"  # Make sure your PDF is named exactly this
+PDF_FILE = "vouchers.pdf"
 OUTPUT_CSV = "voucher_inventory.csv"
 
 def pdf_to_images(pdf_path, dpi=150):
@@ -16,7 +17,8 @@ def pdf_to_images(pdf_path, dpi=150):
         page = doc.load_page(page_num)
         mat = fitz.Matrix(dpi/72, dpi/72)
         pix = page.get_pixmap(matrix=mat)
-        img = cv2.imdecode(pix.tobytes(), cv2.IMREAD_COLOR)
+        img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         images.append(img)
     doc.close()
     return images
