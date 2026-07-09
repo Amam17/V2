@@ -1,50 +1,59 @@
+import fitz
+import pytesseract
+import cv2
+import re
+import pandas as pd
+from datetime import datetime
 import os
-import sys
-import requests
 
-# Network Credentials - Brute force clean ALL invisible line breaks
-PROJECT_ID = os.getenv("PROJECT_ID", "").replace('\n', '').replace('\r', '').strip()
-HUAWEI_COOKIE = os.getenv("HUAWEI_COOKIE", "").replace('\n', '').replace('\r', '').strip()
-HUAWEI_CSRF_TOKEN = os.getenv("HUAWEI_CSRF_TOKEN", "").replace('\n', '').replace('\r', '').strip()
+PDF_FILE = "vouchers.pdf"  # Make sure your PDF is named exactly this
+OUTPUT_CSV = "voucher_inventory.csv"
 
-print("--- INITIATING MEGACORE CLOUD SYNC ---")
-if not all([PROJECT_ID, HUAWEI_COOKIE, HUAWEI_CSRF_TOKEN]):
-    print("CRITICAL ERROR: One or more GitHub Secrets are missing or completely blank.")
-    sys.exit(1)
+def pdf_to_images(pdf_path, dpi=150):
+    doc = fitz.open(pdf_path)
+    images = []
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        mat = fitz.Matrix(dpi/72, dpi/72)
+        pix = page.get_pixmap(matrix=mat)
+        img = cv2.imdecode(pix.tobytes(), cv2.IMREAD_COLOR)
+        images.append(img)
+    doc.close()
+    return images
 
-def fetch_vouchers():
-    print("Authenticating via injected session tokens...")
-    list_url = "https://w3m.huawei.com/mcloud/umag/ProxyForText/qiankuncloud_sin/proxy/v1/network/orchestrate/onlineuser/users"
-    
-    headers = {
-        "x-project-id": PROJECT_ID,
-        "countrycode": "NG",
-        "Cookie": HUAWEI_COOKIE,
-        "X-Csrf-Token": HUAWEI_CSRF_TOKEN,
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "deviceGroupId": "d8a81e9b-15a5-421a-93ae-260d193496f2",
-        "pageIndex": 1,
-        "pageSize": 500,
-        "beginTime": "",
-        "endTime": "",
-        "onlineuserTerminalIp": "",
-        "ssid": "",
-        "userName": "",
-        "deviceIp": ""
-    }
+def extract_vouchers(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+    text = pytesseract.image_to_string(thresh, lang='eng')
+    pattern = r"Passcode:\s*(\d{8}).*?Expiration time:\s*([\d\-:\s]+)"
+    matches = re.findall(pattern, text, re.DOTALL)
+    vouchers = []
+    for passcode, exp_time in matches:
+        vouchers.append({
+            "passcode": passcode.strip(),
+            "expiration": exp_time.strip(),
+            "status": "Available"
+        })
+    return vouchers
 
-    response = requests.post(list_url, json=payload, headers=headers)
-    
-    print("\n--- JSON MAPPER DIAGNOSTIC ---")
-    print(f"Status Code: {response.status_code}")
-    print(f"Raw Huawei Response:\n{response.text[:1500]}")
-    print("------------------------------\n")
-    print("Status: Diagnostic map generated. Halting script.")
+if not os.path.exists(PDF_FILE):
+    print(f"❌ Error: {PDF_FILE} not found in this repository!")
+    exit(1)
 
-if __name__ == "__main__":
-    fetch_vouchers()
+print(f"📄 Processing {PDF_FILE}...")
+images = pdf_to_images(PDF_FILE, dpi=150)
+print(f"✅ Found {len(images)} page(s).")
+
+all_vouchers = []
+for img in images:
+    all_vouchers.extend(extract_vouchers(img))
+
+df = pd.DataFrame(all_vouchers).drop_duplicates(subset="passcode")
+try:
+    df["expiration_dt"] = pd.to_datetime(df["expiration"], errors="coerce")
+    df["is_expired"] = df["expiration_dt"] < datetime.now()
+except:
+    pass
+
+df.to_csv(OUTPUT_CSV, index=False)
+print(f"✅ Done! Extracted {len(df)} vouchers.")
