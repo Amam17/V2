@@ -3,12 +3,12 @@ import sys
 import requests
 from supabase import create_client, Client
 
-# Network and Database Credentials - with .strip() to automatically clean invisible characters
-PROJECT_ID = os.getenv("PROJECT_ID", "").strip()
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
-HUAWEI_COOKIE = os.getenv("HUAWEI_COOKIE", "").strip()
-HUAWEI_CSRF_TOKEN = os.getenv("HUAWEI_CSRF_TOKEN", "").strip()
+# Network and Database Credentials
+PROJECT_ID = os.getenv("PROJECT_ID", "").replace('\n', '').replace('\r', '').strip()
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").replace('\n', '').replace('\r', '').strip()
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").replace('\n', '').replace('\r', '').strip()
+HUAWEI_COOKIE = os.getenv("HUAWEI_COOKIE", "").replace('\n', '').replace('\r', '').strip()
+HUAWEI_CSRF_TOKEN = os.getenv("HUAWEI_CSRF_TOKEN", "").replace('\n', '').replace('\r', '').strip()
 
 print("--- INITIATING MEGACORE CLOUD SYNC ---")
 if not all([PROJECT_ID, SUPABASE_URL, SUPABASE_KEY, HUAWEI_COOKIE, HUAWEI_CSRF_TOKEN]):
@@ -37,8 +37,15 @@ def fetch_vouchers():
     }
 
     response = requests.post(list_url, json=payload, headers=headers)
+    
+    # --- DIAGNOSTIC X-RAY ---
+    print("\n--- DIAGNOSTIC DATA DUMP ---")
+    print(f"Status Code: {response.status_code}")
+    print(f"Raw Response: {response.text}")
+    print("----------------------------\n")
+    
     if response.status_code == 200:
-        print("Huawei network connection established. Data extracted.")
+        print("Huawei network connection established. Parsing data...")
         data = response.json().get("data", [])
         
         if isinstance(data, dict):
@@ -46,8 +53,7 @@ def fetch_vouchers():
             
         return data
     else:
-        print(f"Extraction failed. Status Code: {response.status_code}")
-        print(f"HUAWEI FIREWALL RESPONSE: {response.text}")
+        print("Extraction failed.")
         sys.exit(1)
 
 def sync_to_database(vouchers):
