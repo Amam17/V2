@@ -23,23 +23,24 @@ def pdf_to_images(pdf_path, dpi=150):
     doc.close()
     return images
 
-def extract_vouchers(img):
+def extract_vouchers(img, debug=False):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
     text = pytesseract.image_to_string(thresh, lang='eng')
+    
+    if debug:
+        print("\n=== RAW OCR TEXT (first 2000 characters) ===")
+        print(text[:2000])
+        print("=============================================\n")
+    
+    # Try the original pattern
     pattern = r"Passcode:\s*(\d{8}).*?Expiration time:\s*([\d\-:\s]+)"
     matches = re.findall(pattern, text, re.DOTALL)
-    vouchers = []
-    for passcode, exp_time in matches:
-        vouchers.append({
-            "passcode": passcode.strip(),
-            "expiration": exp_time.strip(),
-            "status": "Available"
-        })
-    return vouchers
+    
+    return matches, text
 
 if not os.path.exists(PDF_FILE):
-    print(f"❌ Error: {PDF_FILE} not found in this repository!")
+    print(f"❌ Error: {PDF_FILE} not found!")
     exit(1)
 
 print(f"📄 Processing {PDF_FILE}...")
@@ -47,15 +48,29 @@ images = pdf_to_images(PDF_FILE, dpi=150)
 print(f"✅ Found {len(images)} page(s).")
 
 all_vouchers = []
-for img in images:
-    all_vouchers.extend(extract_vouchers(img))
+raw_texts = []
 
-df = pd.DataFrame(all_vouchers).drop_duplicates(subset="passcode")
-try:
-    df["expiration_dt"] = pd.to_datetime(df["expiration"], errors="coerce")
-    df["is_expired"] = df["expiration_dt"] < datetime.now()
-except:
-    pass
+for idx, img in enumerate(images):
+    debug = (idx == 0)  # Only debug the first page
+    matches, raw_text = extract_vouchers(img, debug=debug)
+    if debug:
+        raw_texts.append(raw_text)  # Keep for reference
+    all_vouchers.extend(matches)
+
+# If still 0, print a warning
+if len(all_vouchers) == 0:
+    print("\n⚠️ No vouchers found! Check the raw OCR text above.")
+    print("If you see 'Passcode' but the format is different, copy the text and I'll adjust the regex.")
+
+# Build DataFrame
+df = pd.DataFrame(all_vouchers, columns=["passcode", "expiration"]) if all_vouchers else pd.DataFrame()
+if not df.empty:
+    df["status"] = "Available"
+    try:
+        df["expiration_dt"] = pd.to_datetime(df["expiration"], errors="coerce")
+        df["is_expired"] = df["expiration_dt"] < datetime.now()
+    except:
+        pass
 
 df.to_csv(OUTPUT_CSV, index=False)
-print(f"✅ Done! Extracted {len(df)} vouchers.")
+print(f"\n✅ Done! Extracted {len(df)} vouchers.") 
