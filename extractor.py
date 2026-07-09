@@ -10,7 +10,7 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 HUAWEI_COOKIE = os.getenv("HUAWEI_COOKIE")
 HUAWEI_CSRF_TOKEN = os.getenv("HUAWEI_CSRF_TOKEN")
 
-print("--- INITIATING CLOUD SYNC ---")
+print("--- INITIATING MEGACORE CLOUD SYNC ---")
 if not all([PROJECT_ID, SUPABASE_URL, SUPABASE_KEY, HUAWEI_COOKIE, HUAWEI_CSRF_TOKEN]):
     print("CRITICAL ERROR: One or more GitHub Secrets are missing.")
     sys.exit(1)
@@ -31,7 +31,11 @@ def fetch_vouchers():
         "Content-Type": "application/json"
     }
     
-    payload = {"userType": 6}
+    # Broadened payload to capture all account types up to 500 records
+    payload = {
+        "pageIndex": 1,
+        "pageSize": 500
+    }
 
     response = requests.post(list_url, json=payload, headers=headers)
     if response.status_code == 200:
