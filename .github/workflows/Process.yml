@@ -1,0 +1,38 @@
+name: OCR Vouchers
+
+on:
+  push:
+    paths:
+      - 'vouchers.pdf'  # Automatically runs when you update the PDF
+  workflow_dispatch:    # Also allows manual triggering
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y tesseract-ocr libtesseract-dev
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install Python packages
+      run: |
+        pip install pytesseract opencv-python pandas PyMuPDF
+
+    - name: Run OCR script
+      run: python extract_vouchers.py
+
+    - name: Upload CSV as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: voucher-inventory
+        path: voucher_inventory.csv
