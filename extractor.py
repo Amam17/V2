@@ -12,7 +12,7 @@ HUAWEI_CSRF_TOKEN = os.getenv("HUAWEI_CSRF_TOKEN", "").replace('\n', '').replace
 
 print("--- INITIATING MEGACORE CLOUD SYNC ---")
 if not all([PROJECT_ID, SUPABASE_URL, SUPABASE_KEY, HUAWEI_COOKIE, HUAWEI_CSRF_TOKEN]):
-    print("CRITICAL ERROR: One or more GitHub Secrets are missing.")
+    print("CRITICAL ERROR: One or more GitHub Secrets are missing or completely blank.")
     sys.exit(1)
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -45,21 +45,46 @@ def fetch_vouchers():
 
     response = requests.post(list_url, json=payload, headers=headers)
     
-    # --- DIAGNOSTIC X-RAY ---
-    print("\n--- DIAGNOSTIC DATA DUMP ---")
-    # Truncating to 1000 characters so we don't flood your log, but enough to see the folder names
-    print(f"Raw Response: {response.text[:1000]}") 
-    print("----------------------------\n")
-    
     if response.status_code == 200:
+        print("Huawei network connection established. Parsing data...")
         data = response.json().get("data", [])
+        
         if isinstance(data, dict):
             data = data.get("list", data.get("records", data.get("portalUsers", [])))
+            
         return data
     else:
-        print("Extraction failed.")
+        print(f"Extraction failed. Status Code: {response.status_code}")
+        print(f"HUAWEI FIREWALL RESPONSE: {response.text}")
         sys.exit(1)
 
+def sync_to_database(vouchers):
+    print(f"Formatting {len(vouchers)} active records for Supabase insertion...")
+    db_payload = []
+    for v in vouchers:
+        username = v.get("userName", v.get("username", ""))
+        
+        if username:
+            db_record = {
+                "voucher_code": str(username),
+                "agent_id": str(v.get("userType", "Passcode User")),
+                "account_status": "Online",
+                "creation_date": v.get("loginTime", v.get("accessTime", "UNKNOWN"))
+            }
+            db_payload.append(db_record)
+
+    if db_payload:
+        print("Pushing data payload to database...")
+        supabase.table("active_vouchers").upsert(db_payload, on_conflict="voucher_code").execute()
+        print("Database sync complete. Server shutting down cleanly.")
+    else:
+        print("No valid voucher data found after parsing.")
+
 if __name__ == "__main__":
-    fetch_vouchers()
-    print("Status: Diagnostic complete. Halting before database sync.")
+    voucher_data = fetch_vouchers()
+    
+    if voucher_data:
+        print(f"Success: {len(voucher_data)} live portal users found.")
+        sync_to_database(voucher_data)
+    else:
+        print("Status: 0 live portal users found on the network at this time. Database sync skipped.")
