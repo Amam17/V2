@@ -64,5 +64,9 @@ def sync_to_database(vouchers):
 
 if __name__ == "__main__":
     voucher_data = fetch_vouchers()
+    
     if voucher_data:
+        print(f"Success: {len(voucher_data)} active vouchers found.")
         sync_to_database(voucher_data)
+    else:
+        print("Status: 0 active vouchers found on the network at this time. Database sync skipped.")
