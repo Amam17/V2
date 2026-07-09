@@ -3,7 +3,7 @@ import sys
 import requests
 from supabase import create_client, Client
 
-# Network and Database Credentials
+# Network and Database Credentials - Brute force clean ALL invisible line breaks
 PROJECT_ID = os.getenv("PROJECT_ID", "").replace('\n', '').replace('\r', '').strip()
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").replace('\n', '').replace('\r', '').strip()
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").replace('\n', '').replace('\r', '').strip()
@@ -31,29 +31,33 @@ def fetch_vouchers():
         "Content-Type": "application/json"
     }
     
+    # THE GOLDEN KEY: The exact payload Huawei requires to locate your specific network
     payload = {
+        "deviceGroupId": "d8a81e9b-15a5-421a-93ae-260d193496f2",
         "pageIndex": 1,
-        "pageSize": 500
+        "pageSize": 500,
+        "beginTime": "",
+        "endTime": "",
+        "onlineuserTerminalIp": "",
+        "ssid": "",
+        "userName": "",
+        "deviceIp": ""
     }
 
     response = requests.post(list_url, json=payload, headers=headers)
-    
-    # --- DIAGNOSTIC X-RAY ---
-    print("\n--- DIAGNOSTIC DATA DUMP ---")
-    print(f"Status Code: {response.status_code}")
-    print(f"Raw Response: {response.text}")
-    print("----------------------------\n")
     
     if response.status_code == 200:
         print("Huawei network connection established. Parsing data...")
         data = response.json().get("data", [])
         
+        # Handle Huawei's nested list structure
         if isinstance(data, dict):
-            data = data.get("list", data.get("records", []))
+            data = data.get("list", data.get("records", data.get("portalUsers", [])))
             
         return data
     else:
-        print("Extraction failed.")
+        print(f"Extraction failed. Status Code: {response.status_code}")
+        print(f"HUAWEI FIREWALL RESPONSE: {response.text}")
         sys.exit(1)
 
 def sync_to_database(vouchers):
