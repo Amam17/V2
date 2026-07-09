@@ -19,7 +19,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def fetch_vouchers():
     print("Authenticating via injected session tokens...")
-    list_url = "https://w3m.huawei.com/mcloud/umag/ProxyForText/qiankuncloud_sin/proxy/v1/networkconfigs/guestmgr/guest/list"
+    # Target shifted to the Live Portal User database
+    list_url = "https://w3m.huawei.com/mcloud/umag/ProxyForText/qiankuncloud_sin/proxy/v1/network/orchestrate/onlineuser/users"
     
     headers = {
         "x-project-id": PROJECT_ID,
@@ -31,7 +32,6 @@ def fetch_vouchers():
         "Content-Type": "application/json"
     }
     
-    # Broadened payload to capture all account types up to 500 records
     payload = {
         "pageIndex": 1,
         "pageSize": 500
@@ -40,7 +40,13 @@ def fetch_vouchers():
     response = requests.post(list_url, json=payload, headers=headers)
     if response.status_code == 200:
         print("Huawei network connection established. Data extracted.")
-        return response.json().get("data", [])
+        data = response.json().get("data", [])
+        
+        # Huawei enterprise endpoints occasionally nest the user array inside a 'list' object
+        if isinstance(data, dict):
+            data = data.get("list", data.get("records", []))
+            
+        return data
     else:
         print(f"Extraction failed. Status Code: {response.status_code}")
         print(f"HUAWEI FIREWALL RESPONSE: {response.text}")
@@ -50,13 +56,16 @@ def sync_to_database(vouchers):
     print(f"Formatting {len(vouchers)} active records for Supabase insertion...")
     db_payload = []
     for v in vouchers:
-        db_record = {
-            "voucher_code": v.get("userName", ""),
-            "agent_id": v.get("path", "UNKNOWN_AGENT"),
-            "account_status": str(v.get("accountStatus", "0")),
-            "creation_date": v.get("createDate")
-        }
-        if db_record["voucher_code"]:
+        # Dynamic mapping to account for different JSON keys in the new endpoint
+        username = v.get("userName", v.get("username", ""))
+        
+        if username:
+            db_record = {
+                "voucher_code": str(username),
+                "agent_id": str(v.get("userType", "Passcode User")),
+                "account_status": "Online",
+                "creation_date": v.get("loginTime", v.get("accessTime", "UNKNOWN"))
+            }
             db_payload.append(db_record)
 
     if db_payload:
@@ -64,13 +73,13 @@ def sync_to_database(vouchers):
         supabase.table("active_vouchers").upsert(db_payload, on_conflict="voucher_code").execute()
         print("Database sync complete. Server shutting down cleanly.")
     else:
-        print("No valid voucher data found.")
+        print("No valid voucher data found after parsing.")
 
 if __name__ == "__main__":
     voucher_data = fetch_vouchers()
     
     if voucher_data:
-        print(f"Success: {len(voucher_data)} active vouchers found.")
+        print(f"Success: {len(voucher_data)} live portal users found.")
         sync_to_database(voucher_data)
     else:
-        print("Status: 0 active vouchers found on the network at this time. Database sync skipped.")
+        print("Status: 0 live portal users found on the network at this time. Database sync skipped.")
