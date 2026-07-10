@@ -3,7 +3,6 @@ import pytesseract
 import cv2
 import re
 import os
-import json
 import numpy as np
 from datetime import datetime, timedelta
 import csv
@@ -11,7 +10,7 @@ import csv
 PDF_FILE = "vouchers.pdf"
 CSV_FILE = "vouchers.csv"
 
-def pdf_to_images(pdf_path, dpi=150):
+def pdf_to_images(pdf_path, dpi=200):
     doc = fitz.open(pdf_path)
     images = []
     for page_num in range(len(doc)):
@@ -29,11 +28,17 @@ def extract_from_image(img):
     _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
     text = pytesseract.image_to_string(thresh, lang='eng')
     
-    pattern_new = r"Passcode:\s*(\d{8}).*?Validity period:\s*([0-9]+)\s*days"
-    pattern_used = r"Passcode:\s*(\d{8}).*?Expiration time:\s*([\d\-:\s]+)"
+    # Debug: print first 500 chars to logs
+    print("=== RAW OCR TEXT (first 500 chars) ===")
+    print(text[:500])
+    print("=======================================")
+    
+    # More flexible patterns
+    pattern_new = r"Passcode[:\s]*(\d{8}).*?Validity\s*period[:\s]*([0-9]+)\s*days"
+    pattern_used = r"Passcode[:\s]*(\d{8}).*?Expiration\s*time[:\s]*([\d\-:\s]+)"
     
     matches = []
-    new_matches = re.findall(pattern_new, text, re.DOTALL)
+    new_matches = re.findall(pattern_new, text, re.DOTALL | re.IGNORECASE)
     for code, days in new_matches:
         matches.append({
             'passcode': code.strip(),
@@ -41,7 +46,7 @@ def extract_from_image(img):
             'days': int(days.strip())
         })
     
-    used_matches = re.findall(pattern_used, text, re.DOTALL)
+    used_matches = re.findall(pattern_used, text, re.DOTALL | re.IGNORECASE)
     for code, exp_time in used_matches:
         if not any(m['passcode'] == code.strip() for m in matches):
             matches.append({
@@ -49,6 +54,19 @@ def extract_from_image(img):
                 'type': 'used',
                 'expiration': exp_time.strip()
             })
+    
+    # Fallback: if no matches, try extracting just 8-digit codes near "Passcode"
+    if len(matches) == 0:
+        fallback_pattern = r"Passcode[:\s]*(\d{8})"
+        fallback_matches = re.findall(fallback_pattern, text, re.IGNORECASE)
+        for code in fallback_matches:
+            matches.append({
+                'passcode': code.strip(),
+                'type': 'new',
+                'days': 30
+            })
+        if fallback_matches:
+            print(f"⚠️ Fallback: extracted {len(fallback_matches)} vouchers using simple pattern.")
     
     return matches
 
@@ -131,15 +149,17 @@ def main():
         return
     
     print("Converting PDF to images...")
-    images = pdf_to_images(PDF_FILE, dpi=150)
+    images = pdf_to_images(PDF_FILE, dpi=200)
     print(f"Found {len(images)} page(s).")
     
     all_extracted = []
-    for img in images:
+    for idx, img in enumerate(images):
+        print(f"\n--- Processing page {idx+1} ---")
         extracted = extract_from_image(img)
+        print(f"Page {idx+1}: extracted {len(extracted)} vouchers.")
         all_extracted.extend(extracted)
     
-    print(f"Extracted {len(all_extracted)} voucher entries.")
+    print(f"\nTotal extracted: {len(all_extracted)} voucher entries.")
     
     if all_extracted:
         append_vouchers(all_extracted)
@@ -147,4 +167,4 @@ def main():
         print("No vouchers found in PDF.")
 
 if __name__ == "__main__":
-    main()
+    main() 
