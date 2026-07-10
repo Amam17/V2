@@ -2,247 +2,495 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voucher Dashboard</title>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Papa Parse for CSV -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>Voucher Management</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; padding: 20px; }
-        .container { max-width: 1400px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-        .settings-bar { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-bottom: 20px; }
-        .settings-bar input, .settings-bar button { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
-        .settings-bar button { background: #2d6a4f; color: white; border: none; cursor: pointer; }
-        .settings-bar button:hover { background: #1b4332; }
-        .tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 20px; }
-        .tab { padding: 10px 20px; background: #e9ecef; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: 600; }
-        .tab.active { background: white; border-bottom: 3px solid #2d6a4f; }
-        .tab-content { background: white; border-radius: 0 0 10px 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; }
-        .tab-content.active { display: block; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); text-align: center; border-left: 4px solid #2d6a4f; }
-        .stat-card .label { font-size: 14px; color: #6c757d; }
-        .stat-card .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
-        .chart-container { height: 250px; margin: 20px 0; }
-        .table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
-        th { background: #f8f9fa; font-weight: 600; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge.available { background: #d4edda; color: #155724; }
-        .badge.used { background: #cce5ff; color: #004085; }
-        .badge.expired { background: #f8d7da; color: #721c24; }
-        .btn { padding: 6px 14px; border: none; border-radius: 6px; background: #2d6a4f; color: white; cursor: pointer; font-size: 14px; }
-        .btn-danger { background: #dc3545; }
-        .btn-sm { padding: 4px 10px; font-size: 12px; }
-        .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        .mb-10 { margin-bottom: 10px; }
-        .mt-10 { margin-top: 10px; }
-        input, select { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
-        .file-upload { margin: 10px 0; }
-        .alert { padding: 12px; border-radius: 6px; background: #f8d7da; color: #721c24; margin: 10px 0; display: none; }
-        @media (max-width: 600px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1e293b;
+            padding: 16px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        /* header */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .badge-status {
+            font-size: 13px;
+            background: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: #475569;
+        }
+        /* cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            padding: 16px 14px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .card .num {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .card .label {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .card.available .num { color: #16a34a; }
+        .card.in-use .num { color: #d97706; }
+        .card.expired .num { color: #dc2626; }
+        .card.total .num { color: #1e293b; }
+        .revenue-grid {
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        }
+        .revenue-grid .card .num { color: #0f3b5e; }
+        /* section */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title .sub {
+            font-weight: 400;
+            font-size: 14px;
+            color: #64748b;
+            margin-left: auto;
+        }
+        /* forms */
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        input, select, button {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+            background: white;
+        }
+        button {
+            background: #1e293b;
+            color: white;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        button:hover { background: #0f172a; }
+        button.secondary { background: #e2e8f0; color: #1e293b; }
+        button.secondary:hover { background: #cbd5e1; }
+        button.danger { background: #dc2626; }
+        button.danger:hover { background: #b91c1c; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .file-upload-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .file-upload-wrap input[type="file"] {
+            flex: 1;
+            padding: 6px;
+            border: 1px dashed #94a3b8;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        /* table */
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 600px;
+        }
+        th {
+            text-align: left;
+            padding: 10px 8px;
+            background: #f1f5f9;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .status-badge.available { background: #dcfce7; color: #166534; }
+        .status-badge.in-use { background: #fef3c7; color: #92400e; }
+        .status-badge.expired { background: #fee2e2; color: #991b1b; }
+        .status-badge.used { background: #dbeafe; color: #1e40af; }
+        .editable-price {
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 2px 6px;
+            width: 70px;
+            font-size: 14px;
+            transition: 0.1s;
+        }
+        .editable-price:hover { border-color: #94a3b8; background: white; }
+        .editable-price:focus { border-color: #1e293b; background: white; outline: none; }
+        .checkbox-col { width: 36px; text-align: center; }
+        .checkbox-col input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .batch-form {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .batch-form label { font-weight: 500; font-size: 14px; }
+        .batch-form select, .batch-form input { min-width: 120px; }
+        .inline-loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #1e293b;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .msg {
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin: 8px 0;
+            display: none;
+        }
+        .msg.success { background: #dcfce7; color: #166534; display: block; }
+        .msg.error { background: #fee2e2; color: #991b1b; display: block; }
+        .msg.info { background: #dbeafe; color: #1e40af; display: block; }
+        .mt-8 { margin-top: 8px; }
+        .mt-16 { margin-top: 16px; }
+        .text-sm { font-size: 13px; color: #64748b; }
+        .flex-space { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+        .agent-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .agent-chip {
+            background: #f1f5f9;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .agent-chip .del { color: #dc2626; cursor: pointer; font-weight: 700; margin-left: 4px; }
+        .agent-chip .del:hover { color: #991b1b; }
+        .settings-bar {
+            background: #f1f5f9;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .settings-bar input { flex: 1; min-width: 160px; }
+        @media (max-width: 480px) {
+            .card-grid { grid-template-columns: repeat(2, 1fr); }
+            .revenue-grid { grid-template-columns: repeat(2, 1fr); }
+            .header h1 { font-size: 20px; }
+        }
+        /* SVG icons inline */
+        .icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; fill: currentColor; flex-shrink: 0; }
+        .icon-sm { width: 14px; height: 14px; }
     </style>
 </head>
 <body>
 <div class="container" id="app">
+    <!-- Header -->
     <div class="header">
-        <h1>📦 Voucher Inventory</h1>
-        <div>
-            <span id="statusMsg" style="color: #28a745; font-weight: 600;"></span>
+        <h1>
+            <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v2H4V4zm0 4h16v2H4V8zm0 4h16v2H4v-2zm0 4h10v2H4v-2zm13 0h3v2h-3v-2zm-3 4h6v2h-6v-2z"/></svg>
+            Voucher Management
+        </h1>
+        <div class="header-actions">
+            <span class="badge-status" id="syncStatus">Not synced</span>
+            <button onclick="refreshAll()">↻ Refresh</button>
         </div>
     </div>
 
-    <!-- Settings Bar -->
+    <!-- Settings Bar (GitHub credentials) -->
     <div class="settings-bar" id="settingsBar">
-        <input type="text" id="repoInput" placeholder="owner/repo (e.g., john/voucher-dashboard)" style="flex:2;">
-        <input type="password" id="tokenInput" placeholder="GitHub Token (repo scope)" style="flex:2;">
-        <button id="saveSettingsBtn">Save & Load</button>
-        <button id="resetSettingsBtn" class="btn-danger">Reset</button>
+        <input type="text" id="repoInput" placeholder="owner/repo (e.g., john/voucher-system)" style="min-width:200px;">
+        <input type="password" id="tokenInput" placeholder="GitHub token (repo scope)" style="min-width:200px;">
+        <button onclick="saveSettings()">Save & Load</button>
+        <button class="secondary" onclick="resetSettings()">Reset</button>
+        <span style="font-size:13px; color:#64748b;" id="settingsMsg"></span>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs" id="tabs">
-        <div class="tab active" data-tab="dashboard">📊 Dashboard</div>
-        <div class="tab" data-tab="vouchers">🎫 Vouchers</div>
-        <div class="tab" data-tab="agents">👤 Agents</div>
-        <div class="tab" data-tab="import">📥 Import</div>
+    <!-- Message area -->
+    <div id="globalMsg" class="msg"></div>
+
+    <!-- Section A: Summary Cards -->
+    <div class="card-grid" id="summaryCards">
+        <div class="card total"><div class="num" id="totalCount">0</div><div class="label">Total</div></div>
+        <div class="card available"><div class="num" id="availCount">0</div><div class="label">Available</div></div>
+        <div class="card in-use"><div class="num" id="inuseCount">0</div><div class="label">In‑use</div></div>
+        <div class="card expired"><div class="num" id="expiredCount">0</div><div class="label">Expired</div></div>
     </div>
 
-    <!-- DASHBOARD TAB -->
-    <div id="tab-dashboard" class="tab-content active">
-        <div class="stats-grid" id="kpiGrid">
-            <div class="stat-card"><div class="label">💰 Total Revenue</div><div class="value" id="totalRev">-</div></div>
-            <div class="stat-card"><div class="label">📅 Today</div><div class="value" id="todayRev">-</div></div>
-            <div class="stat-card"><div class="label">📅 Yesterday</div><div class="value" id="yesterdayRev">-</div></div>
-            <div class="stat-card"><div class="label">📅 This Week</div><div class="value" id="weekRev">-</div></div>
-            <div class="stat-card"><div class="label">📅 This Month</div><div class="value" id="monthRev">-</div></div>
-        </div>
-        <div class="chart-container"><canvas id="trendChart"></canvas></div>
-        <h3>🏆 Agent Performance</h3>
-        <div class="table-wrap" id="agentTableWrap"><p>No data yet.</p></div>
+    <!-- Section B: Revenue Cards -->
+    <div class="card-grid revenue-grid">
+        <div class="card"><div class="num" id="revTotal">$0.00</div><div class="label">Total Revenue</div></div>
+        <div class="card"><div class="num" id="revToday">$0.00</div><div class="label">Today</div></div>
+        <div class="card"><div class="num" id="revYest">$0.00</div><div class="label">Yesterday</div></div>
+        <div class="card"><div class="num" id="revWeek">$0.00</div><div class="label">This Week</div></div>
+        <div class="card"><div class="num" id="revMonth">$0.00</div><div class="label">This Month</div></div>
     </div>
 
-    <!-- VOUCHERS TAB -->
-    <div id="tab-vouchers" class="tab-content">
-        <div class="flex mb-10">
-            <select id="vStatusFilter"><option value="All">All Status</option><option value="available">Available</option><option value="used">Used</option><option value="expired">Expired</option></select>
-            <select id="vAgentFilter"><option value="All">All Agents</option></select>
-            <input type="text" id="vSearch" placeholder="Search passcode...">
-            <button class="btn" id="refreshVouchersBtn">🔄 Refresh</button>
-        </div>
-        <div class="table-wrap"><table id="voucherTable"><thead><tr><th>Passcode</th><th>Validity</th><th>Expiry</th><th>Status</th><th>Agent</th><th>Price</th><th>Sold Date</th><th>Action</th></tr></thead><tbody id="voucherTableBody"></tbody></table></div>
-        <hr class="mt-10">
-        <h4>🔄 Sell / Assign Voucher</h4>
-        <div class="flex">
-            <select id="sellCodeSelect"><option value="">-- Select passcode --</option></select>
-            <select id="sellAgentSelect"><option value="">-- Agent --</option></select>
-            <input type="number" id="sellPrice" placeholder="Price" step="0.5" min="0">
-            <button class="btn" id="sellSingleBtn">Sell Single</button>
-        </div>
-        <div class="mt-10">
-            <h4>📦 Batch Sell</h4>
-            <div class="flex">
-                <textarea id="batchCodes" placeholder="Enter passcodes, one per line" rows="3" style="flex:1;"></textarea>
-                <select id="batchAgentSelect"><option value="">-- Agent --</option></select>
-                <input type="number" id="batchPrice" placeholder="Price" step="0.5" min="0">
-                <button class="btn" id="sellBatchBtn">Sell Batch</button>
-            </div>
-        </div>
-        <div id="voucherAlert" class="alert"></div>
+    <!-- Section C: Agent Performance -->
+    <div class="section">
+        <div class="section-title">🏆 Agent Performance</div>
+        <div class="table-wrap" id="agentPerfWrap"><p class="text-sm">No agents or sales yet.</p></div>
     </div>
 
-    <!-- AGENTS TAB -->
-    <div id="tab-agents" class="tab-content">
-        <div class="flex mb-10">
-            <input type="text" id="newAgentName" placeholder="New agent name">
-            <button class="btn" id="addAgentBtn">➕ Add Agent</button>
+    <!-- Section D: Upload Vouchers (PDF) -->
+    <div class="section">
+        <div class="section-title">📄 Import Vouchers <span class="sub">Upload PDF export from Huawei eKit</span></div>
+        <div class="file-upload-wrap">
+            <input type="file" id="pdfFileInput" accept=".pdf">
+            <button onclick="uploadPDF()">Upload & Process</button>
+            <span id="uploadStatus" style="font-size:14px; color:#64748b;"></span>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Agent</th><th>Created</th><th>Vouchers Sold</th><th>Action</th></tr></thead><tbody id="agentTableBody"></tbody></table></div>
-        <div id="agentAlert" class="alert"></div>
+        <div id="uploadMsg" class="msg mt-8"></div>
     </div>
 
-    <!-- IMPORT TAB -->
-    <div id="tab-import" class="tab-content">
-        <h4>📥 Bulk Import Vouchers from CSV</h4>
-        <p>CSV must have columns: <code>passcode</code> (required) and <code>validity_days</code> (optional, defaults to 30).</p>
-        <input type="file" id="csvFileInput" accept=".csv" class="file-upload">
-        <button class="btn" id="importCsvBtn">Import CSV</button>
-        <div id="importAlert" class="alert"></div>
-        <hr>
-        <h4>📤 Export Current Data</h4>
-        <button class="btn" id="exportVouchersBtn">Download vouchers.csv</button>
-        <button class="btn" id="exportAgentsBtn">Download agents.csv</button>
+    <!-- Section E: Voucher List + Batch Sell -->
+    <div class="section">
+        <div class="section-title">🎫 Vouchers <span class="sub" id="voucherCountLabel">0 records</span></div>
+        <!-- filters -->
+        <div class="flex-row">
+            <select id="filterStatus"><option value="All">All Status</option><option value="available">Available</option><option value="in-use">In‑use</option><option value="expired">Expired</option><option value="used">Used</option></select>
+            <select id="filterAgent"><option value="All">All Agents</option></select>
+            <input type="text" id="filterSearch" placeholder="Search passcode..." style="flex:1; min-width:120px;">
+            <button class="secondary" onclick="applyFilters()">Filter</button>
+            <button class="secondary" onclick="clearFilters()">Clear</button>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="checkbox-col"><input type="checkbox" id="selectAllCheck" onchange="toggleSelectAll()"></th>
+                        <th>Passcode</th>
+                        <th>Status</th>
+                        <th>Agent</th>
+                        <th>Price ($)</th>
+                        <th>Sold Date</th>
+                        <th>Expiry Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="voucherTableBody"></tbody>
+            </table>
+        </div>
+        <!-- Batch sell form -->
+        <div class="batch-form" id="batchForm">
+            <label>Selected: <span id="selectedCount">0</span></label>
+            <select id="batchAgent"><option value="">-- Agent --</option></select>
+            <input type="number" id="batchPrice" placeholder="Price" step="0.5" min="0" style="width:110px;">
+            <button onclick="batchAssign()">Assign to Agent</button>
+            <span id="batchMsg" style="font-size:13px; color:#64748b;"></span>
+        </div>
+    </div>
+
+    <!-- Section G: Manage Agents -->
+    <div class="section">
+        <div class="section-title">👤 Manage Agents</div>
+        <div class="flex-row">
+            <input type="text" id="newAgentName" placeholder="Agent name">
+            <button onclick="addAgent()">Add Agent</button>
+        </div>
+        <div class="agent-list" id="agentList"></div>
+        <div id="agentMsg" class="msg mt-8"></div>
     </div>
 </div>
 
 <script>
-// ------------------------- CONFIG & STATE -------------------------
-const REPO_KEY = 'gh_repo';
-const TOKEN_KEY = 'gh_token';
-let repo = localStorage.getItem(REPO_KEY) || '';
-let token = localStorage.getItem(TOKEN_KEY) || '';
-let vouchers = [];   // array of objects
-let agents = [];     // array of {name, created_date}
-let chartInstance = null;
+// ============================================================
+// STATE & CONFIG
+// ============================================================
+let REPO = localStorage.getItem('voucher_repo') || '';
+let TOKEN = localStorage.getItem('voucher_token') || '';
+let vouchers = [];
+let agents = [];
+let filteredVouchers = [];
+let selectedPasscodes = new Set();
 
 // DOM refs
 const $ = id => document.getElementById(id);
-const statusMsg = $('statusMsg');
-const repoInput = $('repoInput');
-const tokenInput = $('tokenInput');
-const saveBtn = $('saveSettingsBtn');
-const resetBtn = $('resetSettingsBtn');
-const tabContents = document.querySelectorAll('.tab-content');
-const tabHeaders = document.querySelectorAll('.tab');
+const syncStatus = $('syncStatus');
 
-// ------------------------- GITHUB API HELPERS -------------------------
+// ============================================================
+// GITHUB API HELPERS
+// ============================================================
 async function githubGet(path) {
-    const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+    const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
     const resp = await fetch(url, {
-        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+        headers: { 'Authorization': `token ${TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
     });
-    if (!resp.ok) {
-        if (resp.status === 404) return null;
-        throw new Error(`GitHub GET error ${resp.status}: ${resp.statusText}`);
-    }
-    const data = await resp.json();
-    return data;
+    if (resp.status === 404) return null;
+    if (!resp.ok) throw new Error(`GET ${path} failed: ${resp.status}`);
+    return resp.json();
 }
 
-async function githubPut(path, content, commitMsg) {
-    const url = `https://api.github.com/repos/${repo}/contents/${path}`;
-    // get current sha if exists
+async function githubPut(path, content, msg) {
+    const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
+    // get sha if exists
     let sha = null;
     try {
         const existing = await githubGet(path);
         if (existing) sha = existing.sha;
     } catch(e) {}
     const payload = {
-        message: commitMsg,
+        message: msg,
         content: btoa(content),
         sha: sha
     };
     const resp = await fetch(url, {
         method: 'PUT',
-        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+        headers: { 'Authorization': `token ${TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
         body: JSON.stringify(payload)
     });
-    if (!resp.ok) throw new Error(`GitHub PUT error ${resp.status}: ${resp.statusText}`);
+    if (!resp.ok) throw new Error(`PUT ${path} failed: ${resp.status}`);
     return resp.json();
 }
 
 async function readCSV(path) {
-    try {
-        const data = await githubGet(path);
-        if (!data) return null;
-        const decoded = atob(data.content);
-        return decoded;
-    } catch(e) { return null; }
+    const data = await githubGet(path);
+    if (!data) return null;
+    const decoded = atob(data.content);
+    return decoded;
 }
 
-async function writeCSV(path, csvString, msg) {
-    await githubPut(path, csvString, msg);
+async function writeCSV(path, csvString, commitMsg) {
+    await githubPut(path, csvString, commitMsg);
 }
 
-// ------------------------- DATA LOAD & SAVE -------------------------
-async function loadAllData() {
-    if (!repo || !token) { statusMsg.textContent = '⚠️ Please set repo and token.'; return false; }
-    statusMsg.textContent = 'Loading...';
+async function triggerWorkflow() {
+    const url = `https://api.github.com/repos/${REPO}/actions/workflows/import.yml/dispatches`;
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Authorization': `token ${TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
+        body: JSON.stringify({ ref: 'main' })
+    });
+    if (!resp.ok) throw new Error(`Trigger workflow failed: ${resp.status}`);
+}
+
+// ============================================================
+// DATA LOADING & PARSING
+// ============================================================
+function parseVouchers(csvText) {
+    const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+    return result.data.filter(row => row.passcode && row.passcode.trim() !== '');
+}
+
+function parseAgents(csvText) {
+    const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+    return result.data.filter(row => row.name && row.name.trim() !== '');
+}
+
+async function loadData() {
+    if (!REPO || !TOKEN) {
+        syncStatus.textContent = '⚠️ Set repo & token above';
+        return false;
+    }
+    syncStatus.textContent = '⏳ Loading...';
     try {
-        // Load vouchers
-        let vcsv = await readCSV('vouchers.csv');
-        if (vcsv) {
-            const parsed = Papa.parse(vcsv, { header: true, skipEmptyLines: true });
-            vouchers = parsed.data.filter(row => row.passcode && row.passcode.trim() !== '');
-        } else {
-            vouchers = [];
-        }
-        // Load agents
-        let acsv = await readCSV('agents.csv');
-        if (acsv) {
-            const parsed = Papa.parse(acsv, { header: true, skipEmptyLines: true });
-            agents = parsed.data.filter(row => row.name && row.name.trim() !== '');
-        } else {
-            agents = [];
-        }
-        statusMsg.textContent = `✅ Loaded ${vouchers.length} vouchers, ${agents.length} agents.`;
+        const vcsv = await readCSV('vouchers.csv');
+        if (vcsv) vouchers = parseVouchers(vcsv);
+        else vouchers = [];
+
+        const acsv = await readCSV('agents.csv');
+        if (acsv) agents = parseAgents(acsv);
+        else agents = [];
+
+        syncStatus.textContent = `✅ ${vouchers.length} vouchers, ${agents.length} agents`;
         return true;
     } catch(e) {
-        statusMsg.textContent = '❌ Error loading data: ' + e.message;
-        console.error(e);
+        syncStatus.textContent = '❌ Load error';
+        showMsg('globalMsg', 'Error loading data: ' + e.message, 'error');
         return false;
     }
 }
 
+// ============================================================
+// SAVE DATA
+// ============================================================
 async function saveVouchers() {
     if (!vouchers.length) {
-        // Write empty header
         const header = 'passcode,generation_date,validity_days,expiry_date,status,sale_price,sold_date,assigned_agent\n';
-        await writeCSV('vouchers.csv', header, 'Reset vouchers (empty)');
+        await writeCSV('vouchers.csv', header, 'Reset vouchers');
         return;
     }
     const csv = Papa.unparse(vouchers);
@@ -251,383 +499,467 @@ async function saveVouchers() {
 
 async function saveAgents() {
     if (!agents.length) {
-        await writeCSV('agents.csv', 'name,created_date\n', 'Reset agents (empty)');
+        await writeCSV('agents.csv', 'name,created_date\n', 'Reset agents');
         return;
     }
     const csv = Papa.unparse(agents);
     await writeCSV('agents.csv', csv, 'Update agents from dashboard');
 }
 
-// ------------------------- UI RENDER FUNCTIONS -------------------------
-function renderDashboard() {
-    // Compute revenue stats
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
-    const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+function getToday() {
+    const d = new Date();
+    return d.toISOString().split('T')[0];
+}
 
-    const used = vouchers.filter(v => v.status === 'used');
-    const totalRev = used.reduce((sum, v) => sum + parseFloat(v.sale_price || 0), 0);
-    const todayRev = used.filter(v => new Date(v.sold_date) >= today).reduce((sum, v) => sum + parseFloat(v.sale_price || 0), 0);
-    const yesterdayRev = used.filter(v => {
-        const d = new Date(v.sold_date);
-        return d >= yesterday && d < today;
-    }).reduce((sum, v) => sum + parseFloat(v.sale_price || 0), 0);
-    const weekRev = used.filter(v => new Date(v.sold_date) >= weekStart).reduce((sum, v) => sum + parseFloat(v.sale_price || 0), 0);
-    const monthRev = used.filter(v => new Date(v.sold_date) >= monthStart).reduce((sum, v) => sum + parseFloat(v.sale_price || 0), 0);
+function getDateDaysAgo(days) {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.toISOString().split('T')[0];
+}
 
-    $('totalRev').textContent = '$' + totalRev.toFixed(2);
-    $('todayRev').textContent = '$' + todayRev.toFixed(2);
-    $('yesterdayRev').textContent = '$' + yesterdayRev.toFixed(2);
-    $('weekRev').textContent = '$' + weekRev.toFixed(2);
-    $('monthRev').textContent = '$' + monthRev.toFixed(2);
+function getWeekStart() {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    return d.toISOString().split('T')[0];
+}
 
-    // Agent leaderboard
+function getMonthStart() {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split('T')[0];
+}
+
+function renderSummary() {
+    const total = vouchers.length;
+    const avail = vouchers.filter(v => v.status === 'available').length;
+    const inuse = vouchers.filter(v => v.status === 'in-use').length;
+    const expired = vouchers.filter(v => v.status === 'expired').length;
+    $('totalCount').textContent = total;
+    $('availCount').textContent = avail;
+    $('inuseCount').textContent = inuse;
+    $('expiredCount').textContent = expired;
+}
+
+function renderRevenue() {
+    const today = getToday();
+    const yesterday = getDateDaysAgo(1);
+    const weekStart = getWeekStart();
+    const monthStart = getMonthStart();
+
+    // Include all vouchers with sale_price > 0
+    const sold = vouchers.filter(v => parseFloat(v.sale_price) > 0);
+    const totalRev = sold.reduce((s, v) => s + parseFloat(v.sale_price), 0);
+    const todayRev = sold.filter(v => v.sold_date === today).reduce((s, v) => s + parseFloat(v.sale_price), 0);
+    const yestRev = sold.filter(v => v.sold_date === yesterday).reduce((s, v) => s + parseFloat(v.sale_price), 0);
+    const weekRev = sold.filter(v => v.sold_date >= weekStart).reduce((s, v) => s + parseFloat(v.sale_price), 0);
+    const monthRev = sold.filter(v => v.sold_date >= monthStart).reduce((s, v) => s + parseFloat(v.sale_price), 0);
+
+    $('revTotal').textContent = '$' + totalRev.toFixed(2);
+    $('revToday').textContent = '$' + todayRev.toFixed(2);
+    $('revYest').textContent = '$' + yestRev.toFixed(2);
+    $('revWeek').textContent = '$' + weekRev.toFixed(2);
+    $('revMonth').textContent = '$' + monthRev.toFixed(2);
+}
+
+function renderAgentPerformance() {
+    const used = vouchers.filter(v => v.status === 'used' || v.status === 'in-use' || v.status === 'expired');
     const agentMap = {};
     used.forEach(v => {
         const a = v.assigned_agent || 'Unassigned';
         if (!agentMap[a]) agentMap[a] = { count: 0, revenue: 0 };
         agentMap[a].count += 1;
-        agentMap[a].revenue += parseFloat(v.sale_price || 0);
+        agentMap[a].revenue += parseFloat(v.sale_price) || 0;
     });
-    const sorted = Object.entries(agentMap).sort((a,b) => b[1].revenue - a[1].revenue);
-    let html = '<table><thead><tr><th>Agent</th><th>Vouchers Sold</th><th>Revenue</th></tr></thead><tbody>';
+    const sorted = Object.entries(agentMap).sort((a, b) => b[1].revenue - a[1].revenue);
+    if (!sorted.length) {
+        $('agentPerfWrap').innerHTML = '<p class="text-sm">No agent sales yet.</p>';
+        return;
+    }
+    let html = `<table>
+        <thead><tr><th>Agent</th><th>Sold</th><th>Total Revenue</th><th>Today</th><th>Week</th><th>Month</th></tr></thead><tbody>`;
+    const today = getToday();
+    const weekStart = getWeekStart();
+    const monthStart = getMonthStart();
     sorted.forEach(([name, stats]) => {
-        html += `<tr><td>${name}</td><td>${stats.count}</td><td>$${stats.revenue.toFixed(2)}</td></tr>`;
+        const agentVouchers = used.filter(v => v.assigned_agent === name);
+        const todayCount = agentVouchers.filter(v => v.sold_date === today).length;
+        const weekCount = agentVouchers.filter(v => v.sold_date >= weekStart).length;
+        const monthCount = agentVouchers.filter(v => v.sold_date >= monthStart).length;
+        const todayRev = agentVouchers.filter(v => v.sold_date === today).reduce((s, v) => s + parseFloat(v.sale_price || 0), 0);
+        const weekRev = agentVouchers.filter(v => v.sold_date >= weekStart).reduce((s, v) => s + parseFloat(v.sale_price || 0), 0);
+        const monthRev = agentVouchers.filter(v => v.sold_date >= monthStart).reduce((s, v) => s + parseFloat(v.sale_price || 0), 0);
+        html += `<tr>
+            <td><strong>${name}</strong></td>
+            <td>${stats.count}</td>
+            <td>$${stats.revenue.toFixed(2)}</td>
+            <td>${todayCount} / $${todayRev.toFixed(2)}</td>
+            <td>${weekCount} / $${weekRev.toFixed(2)}</td>
+            <td>${monthCount} / $${monthRev.toFixed(2)}</td>
+        </tr>`;
     });
     html += '</tbody></table>';
-    $('agentTableWrap').innerHTML = html;
-
-    // Chart: last 7 days
-    const days = [];
-    const revs = [];
-    for (let i=6; i>=0; i--) {
-        const d = new Date(today); d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
-        days.push(dateStr);
-        const daily = used.filter(v => v.sold_date === dateStr).reduce((sum, v) => sum + parseFloat(v.sale_price || 0), 0);
-        revs.push(daily);
-    }
-    const ctx = document.getElementById('trendChart').getContext('2d');
-    if (chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: days,
-            datasets: [{ label: 'Daily Revenue ($)', data: revs, backgroundColor: '#2d6a4f' }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
-        }
-    });
+    $('agentPerfWrap').innerHTML = html;
 }
 
-function renderVouchers() {
-    const statusFilter = $('vStatusFilter').value;
-    const agentFilter = $('vAgentFilter').value;
-    const search = $('vSearch').value.toLowerCase().trim();
+function renderVoucherTable() {
+    const statusFilter = $('filterStatus').value;
+    const agentFilter = $('filterAgent').value;
+    const search = $('filterSearch').value.toLowerCase().trim();
 
-    let filtered = vouchers;
-    if (statusFilter !== 'All') filtered = filtered.filter(v => v.status === statusFilter);
-    if (agentFilter !== 'All') filtered = filtered.filter(v => v.assigned_agent === agentFilter);
-    if (search) filtered = filtered.filter(v => v.passcode.includes(search));
+    filteredVouchers = vouchers.filter(v => {
+        if (statusFilter !== 'All' && v.status !== statusFilter) return false;
+        if (agentFilter !== 'All' && v.assigned_agent !== agentFilter) return false;
+        if (search && !v.passcode.includes(search)) return false;
+        return true;
+    });
 
-    // populate select for sell
-    const sellSelect = $('sellCodeSelect');
-    const availableCodes = vouchers.filter(v => v.status === 'available').map(v => v.passcode);
-    sellSelect.innerHTML = '<option value="">-- Select --</option>' + availableCodes.map(c => `<option value="${c}">${c}</option>`).join('');
+    $('voucherCountLabel').textContent = filteredVouchers.length + ' records';
 
-    // table
+    // populate agent filter dropdown
+    const agentFilterSelect = $('filterAgent');
+    const currentAgentVal = agentFilterSelect.value;
+    agentFilterSelect.innerHTML = '<option value="All">All Agents</option>' + 
+        agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+    agentFilterSelect.value = currentAgentVal;
+
+    // populate batch agent dropdown
+    const batchAgentSelect = $('batchAgent');
+    batchAgentSelect.innerHTML = '<option value="">-- Agent --</option>' + 
+        agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+
+    // build table
     let html = '';
-    filtered.forEach(v => {
+    filteredVouchers.forEach(v => {
         const statusClass = v.status || 'unknown';
-        const badge = `<span class="badge ${statusClass}">${statusClass}</span>`;
+        const checked = selectedPasscodes.has(v.passcode) ? 'checked' : '';
+        const isAvailable = v.status === 'available';
+        const priceVal = parseFloat(v.sale_price) || 0;
         html += `<tr>
-            <td>${v.passcode}</td>
-            <td>${v.validity_days || '-'}</td>
-            <td>${v.expiry_date || '-'}</td>
-            <td>${badge}</td>
+            <td class="checkbox-col"><input type="checkbox" class="voucher-check" data-code="${v.passcode}" ${checked} ${!isAvailable ? 'disabled' : ''}></td>
+            <td><strong>${v.passcode}</strong></td>
+            <td><span class="status-badge ${statusClass}">${statusClass}</span></td>
             <td>${v.assigned_agent || '-'}</td>
-            <td>${v.sale_price ? '$'+parseFloat(v.sale_price).toFixed(2) : '-'}</td>
-            <td>${v.sold_date || '-'}</td>
             <td>
-                ${v.status === 'available' ? `<button class="btn btn-sm sell-quick" data-code="${v.passcode}">Sell</button>` : '-'}
+                <input class="editable-price" type="number" step="0.5" min="0" value="${priceVal.toFixed(2)}" 
+                    data-code="${v.passcode}" onchange="updatePrice('${v.passcode}', this.value)">
+            </td>
+            <td>${v.sold_date || '-'}</td>
+            <td>${v.expiry_date || '-'}</td>
+            <td>
+                ${isAvailable ? `<button class="secondary" style="padding:2px 10px; font-size:12px;" onclick="quickSell('${v.passcode}')">Sell</button>` : '-'}
             </td>
         </tr>`;
     });
     $('voucherTableBody').innerHTML = html;
-    // attach quick sell
-    document.querySelectorAll('.sell-quick').forEach(btn => {
-        btn.addEventListener('click', function() {
+
+    // update selected count
+    $('selectedCount').textContent = selectedPasscodes.size;
+
+    // reattach select all
+    const allCheckboxes = document.querySelectorAll('.voucher-check');
+    const checkedBoxes = document.querySelectorAll('.voucher-check:checked');
+    $('selectAllCheck').checked = (allCheckboxes.length > 0 && allCheckboxes.length === checkedBoxes.length);
+
+    // click handler for checkboxes
+    document.querySelectorAll('.voucher-check').forEach(cb => {
+        cb.onchange = function() {
             const code = this.dataset.code;
-            $('sellCodeSelect').value = code;
-            // trigger sell single
-            sellSingle(code);
-        });
+            if (this.checked) selectedPasscodes.add(code);
+            else selectedPasscodes.delete(code);
+            $('selectedCount').textContent = selectedPasscodes.size;
+            // update select all
+            const all = document.querySelectorAll('.voucher-check:not([disabled])');
+            const checked = document.querySelectorAll('.voucher-check:not([disabled]):checked');
+            $('selectAllCheck').checked = (all.length > 0 && all.length === checked.length);
+        };
     });
-
-    // update agent filter options
-    const agentFilterSelect = $('vAgentFilter');
-    const currentVal = agentFilterSelect.value;
-    agentFilterSelect.innerHTML = '<option value="All">All Agents</option>' + agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-    agentFilterSelect.value = currentVal;
-
-    // update sell agent dropdown
-    const sellAgent = $('sellAgentSelect');
-    sellAgent.innerHTML = '<option value="">-- Agent --</option>' + agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-    // batch agent dropdown
-    const batchAgent = $('batchAgentSelect');
-    batchAgent.innerHTML = '<option value="">-- Agent --</option>' + agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
 }
 
 function renderAgents() {
-    const tbody = $('agentTableBody');
+    const container = $('agentList');
+    if (!agents.length) {
+        container.innerHTML = '<span class="text-sm">No agents added yet.</span>';
+        return;
+    }
     let html = '';
     agents.forEach(a => {
-        const sold = vouchers.filter(v => v.assigned_agent === a.name && v.status === 'used').length;
-        html += `<tr>
-            <td>${a.name}</td>
-            <td>${a.created_date || '-'}</td>
-            <td>${sold}</td>
-            <td><button class="btn btn-danger btn-sm delete-agent" data-name="${a.name}">Delete</button></td>
-        </tr>`;
+        const sold = vouchers.filter(v => v.assigned_agent === a.name && (v.status === 'used' || v.status === 'in-use' || v.status === 'expired')).length;
+        html += `<span class="agent-chip">
+            ${a.name} (${sold} sold)
+            <span class="del" onclick="deleteAgent('${a.name}')">✕</span>
+        </span>`;
     });
-    tbody.innerHTML = html;
-    // attach delete events
-    document.querySelectorAll('.delete-agent').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const name = this.dataset.name;
-            if (!confirm(`Delete agent "${name}"?`)) return;
-            // check if has sales
-            const sold = vouchers.filter(v => v.assigned_agent === name && v.status === 'used').length;
-            if (sold > 0) {
-                $('agentAlert').textContent = `❌ Cannot delete: agent has ${sold} sale(s). Reassign or mark them first.`;
-                $('agentAlert').style.display = 'block';
-                return;
-            }
-            agents = agents.filter(a => a.name !== name);
-            await saveAgents();
-            await loadAllData();
-            renderAll();
-        });
-    });
+    container.innerHTML = html;
 }
 
 function renderAll() {
-    renderDashboard();
-    renderVouchers();
+    renderSummary();
+    renderRevenue();
+    renderAgentPerformance();
+    renderVoucherTable();
     renderAgents();
-    // also populate batch sell agent dropdown (already done in renderVouchers)
 }
 
-// ------------------------- ACTIONS -------------------------
-async function sellSingle(code) {
-    const agent = $('sellAgentSelect').value;
-    const price = parseFloat($('sellPrice').value);
-    if (!code) { $('voucherAlert').textContent = 'Please select a passcode.'; $('voucherAlert').style.display = 'block'; return; }
-    if (!agent) { $('voucherAlert').textContent = 'Please select an agent.'; $('voucherAlert').style.display = 'block'; return; }
-    if (isNaN(price) || price < 0) { $('voucherAlert').textContent = 'Enter a valid price.'; $('voucherAlert').style.display = 'block'; return; }
-    try {
-        const v = vouchers.find(v => v.passcode === code);
-        if (!v || v.status !== 'available') { $('voucherAlert').textContent = 'Voucher not available.'; $('voucherAlert').style.display = 'block'; return; }
-        v.status = 'used';
-        v.assigned_agent = agent;
-        v.sale_price = price;
-        v.sold_date = new Date().toISOString().split('T')[0];
-        await saveVouchers();
-        await loadAllData();
+// ============================================================
+// ACTIONS
+// ============================================================
+async function refreshAll() {
+    const ok = await loadData();
+    if (ok) {
+        selectedPasscodes.clear();
         renderAll();
-        $('voucherAlert').textContent = `✅ Sold ${code} to ${agent} for $${price.toFixed(2)}`;
-        $('voucherAlert').style.display = 'block';
-        $('voucherAlert').className = 'alert';
-        $('voucherAlert').style.background = '#d4edda';
-        $('voucherAlert').style.color = '#155724';
-    } catch(e) {
-        $('voucherAlert').textContent = 'Error: ' + e.message;
-        $('voucherAlert').style.display = 'block';
-        $('voucherAlert').className = 'alert';
-        $('voucherAlert').style.background = '#f8d7da';
-        $('voucherAlert').style.color = '#721c24';
+        showMsg('globalMsg', 'Data refreshed', 'success');
     }
 }
 
-async function sellBatch() {
-    const codesText = $('batchCodes').value;
-    const agent = $('batchAgentSelect').value;
+function applyFilters() {
+    renderVoucherTable();
+}
+
+function clearFilters() {
+    $('filterStatus').value = 'All';
+    $('filterAgent').value = 'All';
+    $('filterSearch').value = '';
+    renderVoucherTable();
+}
+
+function toggleSelectAll() {
+    const checked = $('selectAllCheck').checked;
+    document.querySelectorAll('.voucher-check:not([disabled])').forEach(cb => {
+        cb.checked = checked;
+        const code = cb.dataset.code;
+        if (checked) selectedPasscodes.add(code);
+        else selectedPasscodes.delete(code);
+    });
+    $('selectedCount').textContent = selectedPasscodes.size;
+}
+
+async function updatePrice(passcode, value) {
+    const price = parseFloat(value);
+    if (isNaN(price) || price < 0) return;
+    const v = vouchers.find(v => v.passcode === passcode);
+    if (!v) return;
+    v.sale_price = price;
+    try {
+        await saveVouchers();
+        await loadData();
+        renderAll();
+        showMsg('globalMsg', `Price for ${passcode} updated to $${price.toFixed(2)}`, 'success');
+    } catch(e) {
+        showMsg('globalMsg', 'Error updating price: ' + e.message, 'error');
+    }
+}
+
+async function quickSell(passcode) {
+    // find a default agent if exists
+    if (!agents.length) {
+        showMsg('globalMsg', 'Please add an agent first.', 'error');
+        return;
+    }
+    const agent = agents[0].name;
+    const price = prompt('Enter sale price for ' + passcode + ':', '5.00');
+    if (price === null) return;
+    const p = parseFloat(price);
+    if (isNaN(p) || p < 0) { showMsg('globalMsg', 'Invalid price.', 'error'); return; }
+    const v = vouchers.find(v => v.passcode === passcode);
+    if (!v || v.status !== 'available') { showMsg('globalMsg', 'Voucher not available.', 'error'); return; }
+    v.status = 'used';
+    v.assigned_agent = agent;
+    v.sale_price = p;
+    v.sold_date = getToday();
+    try {
+        await saveVouchers();
+        await loadData();
+        selectedPasscodes.clear();
+        renderAll();
+        showMsg('globalMsg', `✅ Sold ${passcode} to ${agent} for $${p.toFixed(2)}`, 'success');
+    } catch(e) {
+        showMsg('globalMsg', 'Error: ' + e.message, 'error');
+    }
+}
+
+async function batchAssign() {
+    const codes = Array.from(selectedPasscodes);
+    if (!codes.length) { showMsg('globalMsg', 'Select at least one voucher.', 'error'); return; }
+    const agent = $('batchAgent').value;
+    if (!agent) { showMsg('globalMsg', 'Select an agent.', 'error'); return; }
     const price = parseFloat($('batchPrice').value);
-    if (!codesText.trim()) { $('voucherAlert').textContent = 'Enter at least one passcode.'; $('voucherAlert').style.display = 'block'; return; }
-    if (!agent) { $('voucherAlert').textContent = 'Select an agent.'; $('voucherAlert').style.display = 'block'; return; }
-    if (isNaN(price) || price < 0) { $('voucherAlert').textContent = 'Enter a valid price.'; $('voucherAlert').style.display = 'block'; return; }
-    const codes = codesText.split('\n').map(c => c.trim()).filter(c => c);
-    let soldCount = 0;
+    if (isNaN(price) || price < 0) { showMsg('globalMsg', 'Enter a valid price.', 'error'); return; }
+
+    let assigned = 0;
     for (const code of codes) {
         const v = vouchers.find(v => v.passcode === code);
         if (v && v.status === 'available') {
             v.status = 'used';
             v.assigned_agent = agent;
             v.sale_price = price;
-            v.sold_date = new Date().toISOString().split('T')[0];
-            soldCount++;
+            v.sold_date = getToday();
+            assigned++;
         }
     }
-    if (soldCount === 0) { $('voucherAlert').textContent = 'No valid available vouchers found.'; $('voucherAlert').style.display = 'block'; return; }
-    await saveVouchers();
-    await loadAllData();
-    renderAll();
-    $('voucherAlert').textContent = `✅ Sold ${soldCount} voucher(s) to ${agent}.`;
-    $('voucherAlert').style.display = 'block';
-    $('voucherAlert').className = 'alert';
-    $('voucherAlert').style.background = '#d4edda';
-    $('voucherAlert').style.color = '#155724';
+    if (!assigned) { showMsg('globalMsg', 'No available vouchers selected.', 'error'); return; }
+    try {
+        await saveVouchers();
+        await loadData();
+        selectedPasscodes.clear();
+        renderAll();
+        showMsg('globalMsg', `✅ Assigned ${assigned} voucher(s) to ${agent} at $${price.toFixed(2)} each`, 'success');
+    } catch(e) {
+        showMsg('globalMsg', 'Error: ' + e.message, 'error');
+    }
 }
 
-async function importCSV(file) {
+// ============================================================
+// AGENT MANAGEMENT
+// ============================================================
+async function addAgent() {
+    const name = $('newAgentName').value.trim();
+    if (!name) { showMsg('agentMsg', 'Enter a name.', 'error'); return; }
+    if (agents.some(a => a.name === name)) { showMsg('agentMsg', 'Agent already exists.', 'error'); return; }
+    agents.push({ name: name, created_date: getToday() });
+    try {
+        await saveAgents();
+        await loadData();
+        renderAll();
+        $('newAgentName').value = '';
+        showMsg('agentMsg', `✅ Agent "${name}" added.`, 'success');
+    } catch(e) {
+        showMsg('agentMsg', 'Error: ' + e.message, 'error');
+    }
+}
+
+async function deleteAgent(name) {
+    const used = vouchers.filter(v => v.assigned_agent === name && (v.status === 'used' || v.status === 'in-use' || v.status === 'expired'));
+    if (used.length > 0) {
+        showMsg('agentMsg', `❌ Cannot delete: ${name} has ${used.length} sale(s).`, 'error');
+        return;
+    }
+    if (!confirm(`Delete agent "${name}"?`)) return;
+    agents = agents.filter(a => a.name !== name);
+    try {
+        await saveAgents();
+        await loadData();
+        renderAll();
+        showMsg('agentMsg', `✅ Agent "${name}" deleted.`, 'success');
+    } catch(e) {
+        showMsg('agentMsg', 'Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// PDF UPLOAD + WORKFLOW TRIGGER
+// ============================================================
+async function uploadPDF() {
+    const fileInput = $('pdfFileInput');
+    if (!fileInput.files.length) {
+        showMsg('uploadMsg', 'Please select a PDF file.', 'error');
+        return;
+    }
+    const file = fileInput.files[0];
+    if (file.type !== 'application/pdf') {
+        showMsg('uploadMsg', 'File must be a PDF.', 'error');
+        return;
+    }
     const reader = new FileReader();
     reader.onload = async function(e) {
-        const text = e.target.result;
-        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-        const rows = parsed.data.filter(row => row.passcode && row.passcode.trim() !== '');
-        let added = 0;
-        const today = new Date().toISOString().split('T')[0];
-        for (const row of rows) {
-            const code = row.passcode.trim();
-            if (vouchers.some(v => v.passcode === code)) continue;
-            const days = parseInt(row.validity_days) || 30;
-            const expiry = new Date();
-            expiry.setDate(expiry.getDate() + days);
-            vouchers.push({
-                passcode: code,
-                generation_date: today,
-                validity_days: days,
-                expiry_date: expiry.toISOString().split('T')[0],
-                status: 'available',
-                sale_price: '',
-                sold_date: '',
-                assigned_agent: ''
+        const base64 = e.target.result.split(',')[1];
+        $('uploadStatus').textContent = '⏳ Uploading PDF...';
+        showMsg('uploadMsg', 'Uploading PDF to GitHub...', 'info');
+        try {
+            // Upload PDF
+            const payload = {
+                message: 'Upload vouchers via dashboard',
+                content: base64,
+                sha: null
+            };
+            // get sha if exists
+            try {
+                const existing = await githubGet('vouchers.pdf');
+                if (existing) payload.sha = existing.sha;
+            } catch(ex) {}
+            const url = `https://api.github.com/repos/${REPO}/contents/vouchers.pdf`;
+            const resp = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify(payload)
             });
-            added++;
-        }
-        if (added > 0) {
-            await saveVouchers();
-            await loadAllData();
-            renderAll();
-            $('importAlert').textContent = `✅ Imported ${added} new vouchers.`;
-            $('importAlert').style.display = 'block';
-            $('importAlert').className = 'alert';
-            $('importAlert').style.background = '#d4edda';
-            $('importAlert').style.color = '#155724';
-        } else {
-            $('importAlert').textContent = 'ℹ️ No new vouchers to import (duplicates or empty).';
-            $('importAlert').style.display = 'block';
-            $('importAlert').className = 'alert';
-            $('importAlert').style.background = '#fff3cd';
-            $('importAlert').style.color = '#856404';
+            if (!resp.ok) throw new Error('PDF upload failed: ' + resp.status);
+            $('uploadStatus').textContent = '✅ PDF uploaded, triggering OCR...';
+            showMsg('uploadMsg', 'PDF uploaded. Triggering OCR workflow...', 'info');
+
+            // Trigger workflow
+            await triggerWorkflow();
+            $('uploadStatus').textContent = '⏳ OCR running in cloud (approx 30‑60s)...';
+            showMsg('uploadMsg', 'Workflow triggered. Check back in about 1 minute and click Refresh.', 'success');
+            fileInput.value = '';
+        } catch(err) {
+            $('uploadStatus').textContent = '❌ Error';
+            showMsg('uploadMsg', 'Error: ' + err.message, 'error');
         }
     };
-    reader.readAsText(file);
+    reader.readAsDataURL(file);
 }
 
-// ------------------------- EVENT BINDINGS -------------------------
-// Settings
-saveBtn.addEventListener('click', function() {
-    repo = repoInput.value.trim();
-    token = tokenInput.value.trim();
-    if (repo && token) {
-        localStorage.setItem(REPO_KEY, repo);
-        localStorage.setItem(TOKEN_KEY, token);
-        loadAllData().then(() => renderAll());
-    } else {
-        statusMsg.textContent = 'Please enter both repo and token.';
+// ============================================================
+// SETTINGS
+// ============================================================
+function saveSettings() {
+    const repo = $('repoInput').value.trim();
+    const token = $('tokenInput').value.trim();
+    if (!repo || !token) {
+        $('settingsMsg').textContent = 'Both fields required.';
+        return;
     }
-});
-resetBtn.addEventListener('click', function() {
-    localStorage.removeItem(REPO_KEY);
-    localStorage.removeItem(TOKEN_KEY);
-    repo = ''; token = '';
-    repoInput.value = '';
-    tokenInput.value = '';
-    statusMsg.textContent = 'Settings cleared. Reload page to re-enter.';
-});
+    REPO = repo;
+    TOKEN = token;
+    localStorage.setItem('voucher_repo', REPO);
+    localStorage.setItem('voucher_token', TOKEN);
+    $('settingsMsg').textContent = '✅ Saved. Loading data...';
+    refreshAll();
+}
 
-// Tabs
-tabHeaders.forEach(tab => {
-    tab.addEventListener('click', function() {
-        const target = this.dataset.tab;
-        tabContents.forEach(c => c.classList.remove('active'));
-        tabHeaders.forEach(t => t.classList.remove('active'));
-        document.getElementById('tab-' + target).classList.add('active');
-        this.classList.add('active');
+function resetSettings() {
+    localStorage.removeItem('voucher_repo');
+    localStorage.removeItem('voucher_token');
+    REPO = '';
+    TOKEN = '';
+    $('repoInput').value = '';
+    $('tokenInput').value = '';
+    $('settingsMsg').textContent = 'Settings cleared.';
+    syncStatus.textContent = '⚠️ Set repo & token';
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function showMsg(id, text, type) {
+    const el = $(id);
+    el.textContent = text;
+    el.className = 'msg ' + type;
+    el.style.display = 'block';
+    if (type !== 'error') {
+        setTimeout(() => { el.style.display = 'none'; }, 6000);
+    }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+if (REPO && TOKEN) {
+    $('repoInput').value = REPO;
+    $('tokenInput').value = TOKEN;
+    loadData().then(() => {
+        renderAll();
+        $('settingsMsg').textContent = '✅ Ready';
     });
-});
-
-// Vouchers: filter & refresh
-$('vStatusFilter').addEventListener('change', renderVouchers);
-$('vAgentFilter').addEventListener('change', renderVouchers);
-$('vSearch').addEventListener('input', renderVouchers);
-$('refreshVouchersBtn').addEventListener('click', function() {
-    loadAllData().then(() => renderAll());
-});
-
-// Sell single
-$('sellSingleBtn').addEventListener('click', function() {
-    const code = $('sellCodeSelect').value;
-    sellSingle(code);
-});
-
-// Sell batch
-$('sellBatchBtn').addEventListener('click', sellBatch);
-
-// Agents
-$('addAgentBtn').addEventListener('click', async function() {
-    const name = $('newAgentName').value.trim();
-    if (!name) { $('agentAlert').textContent = 'Enter a name.'; $('agentAlert').style.display = 'block'; return; }
-    if (agents.some(a => a.name === name)) { $('agentAlert').textContent = 'Agent already exists.'; $('agentAlert').style.display = 'block'; return; }
-    agents.push({ name: name, created_date: new Date().toISOString().split('T')[0] });
-    await saveAgents();
-    await loadAllData();
-    renderAll();
-    $('agentAlert').textContent = `✅ Added agent ${name}`;
-    $('agentAlert').style.display = 'block';
-    $('agentAlert').className = 'alert';
-    $('agentAlert').style.background = '#d4edda';
-    $('agentAlert').style.color = '#155724';
-    $('newAgentName').value = '';
-});
-
-// Import CSV
-$('importCsvBtn').addEventListener('click', function() {
-    const fileInput = $('csvFileInput');
-    if (fileInput.files.length === 0) { $('importAlert').textContent = 'Select a CSV file first.'; $('importAlert').style.display = 'block'; return; }
-    importCSV(fileInput.files[0]);
-});
-
-// Export
-$('exportVouchersBtn').addEventListener('click', function() {
-    const csv = Papa.unparse(vouchers);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'vouchers.csv'; a.click();
-});
-$('exportAgentsBtn').addEventListener('click', function() {
-    const csv = Papa.unparse(agents);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'agents.csv'; a.click();
-});
-
-// ------------------------- INIT -------------------------
-if (repo && token) {
-    repoInput.value = repo;
-    tokenInput.value = token;
-    loadAllData().then(() => renderAll());
 } else {
-    statusMsg.textContent = '🔑 Please enter your GitHub repo and token above.';
+    syncStatus.textContent = '🔑 Set repo & token above';
 }
 </script>
 </body>
-</html>
+    </html>
