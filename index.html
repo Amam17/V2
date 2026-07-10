@@ -6,6 +6,8 @@
     <title>Voucher Management</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
+        /* (same styles as before - no changes needed) */
+        /* Keep your existing CSS exactly as is */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -22,7 +24,6 @@
             max-width: 1200px;
             margin: 0 auto;
         }
-        /* header */
         .header {
             display: flex;
             flex-wrap: wrap;
@@ -51,7 +52,6 @@
             border-radius: 20px;
             color: #475569;
         }
-        /* cards */
         .card-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -83,7 +83,6 @@
             grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
         }
         .revenue-grid .card .num { color: #0f3b5e; }
-        /* section */
         .section {
             background: white;
             border-radius: 12px;
@@ -105,7 +104,6 @@
             color: #64748b;
             margin-left: auto;
         }
-        /* forms */
         .flex-row {
             display: flex;
             flex-wrap: wrap;
@@ -150,7 +148,6 @@
             border-radius: 8px;
             background: #f8fafc;
         }
-        /* table */
         .table-wrap {
             overflow-x: auto;
             margin-top: 10px;
@@ -190,7 +187,7 @@
             border: 1px solid transparent;
             border-radius: 4px;
             padding: 2px 6px;
-            width: 70px;
+            width: 80px;
             font-size: 14px;
             transition: 0.1s;
         }
@@ -261,7 +258,6 @@
             .revenue-grid { grid-template-columns: repeat(2, 1fr); }
             .header h1 { font-size: 20px; }
         }
-        /* SVG icons inline */
         .icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; fill: currentColor; flex-shrink: 0; }
         .icon-sm { width: 14px; height: 14px; }
     </style>
@@ -280,7 +276,7 @@
         </div>
     </div>
 
-    <!-- Settings Bar (GitHub credentials) -->
+    <!-- Settings Bar -->
     <div class="settings-bar" id="settingsBar">
         <input type="text" id="repoInput" placeholder="owner/repo (e.g., john/voucher-system)" style="min-width:200px;">
         <input type="password" id="tokenInput" placeholder="GitHub token (repo scope)" style="min-width:200px;">
@@ -300,13 +296,13 @@
         <div class="card expired"><div class="num" id="expiredCount">0</div><div class="label">Expired</div></div>
     </div>
 
-    <!-- Section B: Revenue Cards -->
+    <!-- Section B: Revenue Cards (Currency changed to ₦) -->
     <div class="card-grid revenue-grid">
-        <div class="card"><div class="num" id="revTotal">$0.00</div><div class="label">Total Revenue</div></div>
-        <div class="card"><div class="num" id="revToday">$0.00</div><div class="label">Today</div></div>
-        <div class="card"><div class="num" id="revYest">$0.00</div><div class="label">Yesterday</div></div>
-        <div class="card"><div class="num" id="revWeek">$0.00</div><div class="label">This Week</div></div>
-        <div class="card"><div class="num" id="revMonth">$0.00</div><div class="label">This Month</div></div>
+        <div class="card"><div class="num" id="revTotal">₦0.00</div><div class="label">Total Revenue</div></div>
+        <div class="card"><div class="num" id="revToday">₦0.00</div><div class="label">Today</div></div>
+        <div class="card"><div class="num" id="revYest">₦0.00</div><div class="label">Yesterday</div></div>
+        <div class="card"><div class="num" id="revWeek">₦0.00</div><div class="label">This Week</div></div>
+        <div class="card"><div class="num" id="revMonth">₦0.00</div><div class="label">This Month</div></div>
     </div>
 
     <!-- Section C: Agent Performance -->
@@ -315,7 +311,7 @@
         <div class="table-wrap" id="agentPerfWrap"><p class="text-sm">No agents or sales yet.</p></div>
     </div>
 
-    <!-- Section D: Upload Vouchers (PDF) -->
+    <!-- Section D: Upload Vouchers -->
     <div class="section">
         <div class="section-title">📄 Import Vouchers <span class="sub">Upload PDF export from Huawei eKit</span></div>
         <div class="file-upload-wrap">
@@ -345,7 +341,7 @@
                         <th>Passcode</th>
                         <th>Status</th>
                         <th>Agent</th>
-                        <th>Price ($)</th>
+                        <th>Price (₦)</th>
                         <th>Sold Date</th>
                         <th>Expiry Date</th>
                         <th>Action</th>
@@ -358,7 +354,7 @@
         <div class="batch-form" id="batchForm">
             <label>Selected: <span id="selectedCount">0</span></label>
             <select id="batchAgent"><option value="">-- Agent --</option></select>
-            <input type="number" id="batchPrice" placeholder="Price" step="0.5" min="0" style="width:110px;">
+            <input type="number" id="batchPrice" placeholder="Price (₦)" step="0.5" min="0" style="width:110px;">
             <button onclick="batchAssign()">Assign to Agent</button>
             <span id="batchMsg" style="font-size:13px; color:#64748b;"></span>
         </div>
@@ -387,7 +383,6 @@ let agents = [];
 let filteredVouchers = [];
 let selectedPasscodes = new Set();
 
-// DOM refs
 const $ = id => document.getElementById(id);
 const syncStatus = $('syncStatus');
 
@@ -406,7 +401,6 @@ async function githubGet(path) {
 
 async function githubPut(path, content, msg) {
     const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
-    // get sha if exists
     let sha = null;
     try {
         const existing = await githubGet(path);
@@ -551,7 +545,6 @@ function renderRevenue() {
     const weekStart = getWeekStart();
     const monthStart = getMonthStart();
 
-    // Include all vouchers with sale_price > 0
     const sold = vouchers.filter(v => parseFloat(v.sale_price) > 0);
     const totalRev = sold.reduce((s, v) => s + parseFloat(v.sale_price), 0);
     const todayRev = sold.filter(v => v.sold_date === today).reduce((s, v) => s + parseFloat(v.sale_price), 0);
@@ -559,11 +552,11 @@ function renderRevenue() {
     const weekRev = sold.filter(v => v.sold_date >= weekStart).reduce((s, v) => s + parseFloat(v.sale_price), 0);
     const monthRev = sold.filter(v => v.sold_date >= monthStart).reduce((s, v) => s + parseFloat(v.sale_price), 0);
 
-    $('revTotal').textContent = '$' + totalRev.toFixed(2);
-    $('revToday').textContent = '$' + todayRev.toFixed(2);
-    $('revYest').textContent = '$' + yestRev.toFixed(2);
-    $('revWeek').textContent = '$' + weekRev.toFixed(2);
-    $('revMonth').textContent = '$' + monthRev.toFixed(2);
+    $('revTotal').textContent = '₦' + totalRev.toFixed(2);
+    $('revToday').textContent = '₦' + todayRev.toFixed(2);
+    $('revYest').textContent = '₦' + yestRev.toFixed(2);
+    $('revWeek').textContent = '₦' + weekRev.toFixed(2);
+    $('revMonth').textContent = '₦' + monthRev.toFixed(2);
 }
 
 function renderAgentPerformance() {
@@ -596,10 +589,10 @@ function renderAgentPerformance() {
         html += `<tr>
             <td><strong>${name}</strong></td>
             <td>${stats.count}</td>
-            <td>$${stats.revenue.toFixed(2)}</td>
-            <td>${todayCount} / $${todayRev.toFixed(2)}</td>
-            <td>${weekCount} / $${weekRev.toFixed(2)}</td>
-            <td>${monthCount} / $${monthRev.toFixed(2)}</td>
+            <td>₦${stats.revenue.toFixed(2)}</td>
+            <td>${todayCount} / ₦${todayRev.toFixed(2)}</td>
+            <td>${weekCount} / ₦${weekRev.toFixed(2)}</td>
+            <td>${monthCount} / ₦${monthRev.toFixed(2)}</td>
         </tr>`;
     });
     html += '</tbody></table>';
@@ -620,19 +613,16 @@ function renderVoucherTable() {
 
     $('voucherCountLabel').textContent = filteredVouchers.length + ' records';
 
-    // populate agent filter dropdown
     const agentFilterSelect = $('filterAgent');
     const currentAgentVal = agentFilterSelect.value;
     agentFilterSelect.innerHTML = '<option value="All">All Agents</option>' + 
         agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
     agentFilterSelect.value = currentAgentVal;
 
-    // populate batch agent dropdown
     const batchAgentSelect = $('batchAgent');
     batchAgentSelect.innerHTML = '<option value="">-- Agent --</option>' + 
         agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
 
-    // build table
     let html = '';
     filteredVouchers.forEach(v => {
         const statusClass = v.status || 'unknown';
@@ -657,22 +647,18 @@ function renderVoucherTable() {
     });
     $('voucherTableBody').innerHTML = html;
 
-    // update selected count
     $('selectedCount').textContent = selectedPasscodes.size;
 
-    // reattach select all
     const allCheckboxes = document.querySelectorAll('.voucher-check');
     const checkedBoxes = document.querySelectorAll('.voucher-check:checked');
     $('selectAllCheck').checked = (allCheckboxes.length > 0 && allCheckboxes.length === checkedBoxes.length);
 
-    // click handler for checkboxes
     document.querySelectorAll('.voucher-check').forEach(cb => {
         cb.onchange = function() {
             const code = this.dataset.code;
             if (this.checked) selectedPasscodes.add(code);
             else selectedPasscodes.delete(code);
             $('selectedCount').textContent = selectedPasscodes.size;
-            // update select all
             const all = document.querySelectorAll('.voucher-check:not([disabled])');
             const checked = document.querySelectorAll('.voucher-check:not([disabled]):checked');
             $('selectAllCheck').checked = (all.length > 0 && all.length === checked.length);
@@ -749,20 +735,19 @@ async function updatePrice(passcode, value) {
         await saveVouchers();
         await loadData();
         renderAll();
-        showMsg('globalMsg', `Price for ${passcode} updated to $${price.toFixed(2)}`, 'success');
+        showMsg('globalMsg', `Price for ${passcode} updated to ₦${price.toFixed(2)}`, 'success');
     } catch(e) {
         showMsg('globalMsg', 'Error updating price: ' + e.message, 'error');
     }
 }
 
 async function quickSell(passcode) {
-    // find a default agent if exists
     if (!agents.length) {
         showMsg('globalMsg', 'Please add an agent first.', 'error');
         return;
     }
     const agent = agents[0].name;
-    const price = prompt('Enter sale price for ' + passcode + ':', '5.00');
+    const price = prompt('Enter sale price for ' + passcode + ' (₦):', '5.00');
     if (price === null) return;
     const p = parseFloat(price);
     if (isNaN(p) || p < 0) { showMsg('globalMsg', 'Invalid price.', 'error'); return; }
@@ -777,7 +762,7 @@ async function quickSell(passcode) {
         await loadData();
         selectedPasscodes.clear();
         renderAll();
-        showMsg('globalMsg', `✅ Sold ${passcode} to ${agent} for $${p.toFixed(2)}`, 'success');
+        showMsg('globalMsg', `✅ Sold ${passcode} to ${agent} for ₦${p.toFixed(2)}`, 'success');
     } catch(e) {
         showMsg('globalMsg', 'Error: ' + e.message, 'error');
     }
@@ -808,7 +793,7 @@ async function batchAssign() {
         await loadData();
         selectedPasscodes.clear();
         renderAll();
-        showMsg('globalMsg', `✅ Assigned ${assigned} voucher(s) to ${agent} at $${price.toFixed(2)} each`, 'success');
+        showMsg('globalMsg', `✅ Assigned ${assigned} voucher(s) to ${agent} at ₦${price.toFixed(2)} each`, 'success');
     } catch(e) {
         showMsg('globalMsg', 'Error: ' + e.message, 'error');
     }
@@ -877,7 +862,6 @@ async function uploadPDF() {
                 content: base64,
                 sha: null
             };
-            // get sha if exists
             try {
                 const existing = await githubGet('vouchers.pdf');
                 if (existing) payload.sha = existing.sha;
@@ -892,7 +876,6 @@ async function uploadPDF() {
             $('uploadStatus').textContent = '✅ PDF uploaded, triggering OCR...';
             showMsg('uploadMsg', 'PDF uploaded. Triggering OCR workflow...', 'info');
 
-            // Trigger workflow
             await triggerWorkflow();
             $('uploadStatus').textContent = '⏳ OCR running in cloud (approx 30‑60s)...';
             showMsg('uploadMsg', 'Workflow triggered. Check back in about 1 minute and click Refresh.', 'success');
