@@ -6,270 +6,76 @@
     <title>Voucher Management</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        /* (same styles as before - no changes needed) */
-        /* Keep your existing CSS exactly as is */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #f4f6f8;
-            color: #1e293b;
-            padding: 16px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .header {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .header-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .badge-status {
-            font-size: 13px;
-            background: #e2e8f0;
-            padding: 4px 12px;
-            border-radius: 20px;
-            color: #475569;
-        }
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .card {
-            background: white;
-            padding: 16px 14px;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            text-align: center;
-        }
-        .card .num {
-            font-size: 28px;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-        .card .label {
-            font-size: 13px;
-            color: #64748b;
-            margin-top: 2px;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f6f8; color: #1e293b; padding: 16px; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .header h1 { font-size: 24px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .badge-status { font-size: 13px; background: #e2e8f0; padding: 4px 12px; border-radius: 20px; color: #475569; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .card { background: white; padding: 16px 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-align: center; }
+        .card .num { font-size: 28px; font-weight: 700; line-height: 1.2; }
+        .card .label { font-size: 13px; color: #64748b; margin-top: 2px; }
         .card.available .num { color: #16a34a; }
         .card.in-use .num { color: #d97706; }
         .card.expired .num { color: #dc2626; }
         .card.total .num { color: #1e293b; }
-        .revenue-grid {
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-        }
+        .revenue-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
         .revenue-grid .card .num { color: #0f3b5e; }
-        .section {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .section-title .sub {
-            font-weight: 400;
-            font-size: 14px;
-            color: #64748b;
-            margin-left: auto;
-        }
-        .flex-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            margin-top: 8px;
-        }
-        input, select, button {
-            padding: 8px 14px;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            font-size: 14px;
-            background: white;
-        }
-        button {
-            background: #1e293b;
-            color: white;
-            font-weight: 500;
-            border: none;
-            cursor: pointer;
-            transition: 0.15s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .section { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .section-title .sub { font-weight: 400; font-size: 14px; color: #64748b; margin-left: auto; }
+        .flex-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; }
+        input, select, button { padding: 8px 14px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; background: white; }
+        button { background: #1e293b; color: white; font-weight: 500; border: none; cursor: pointer; transition: 0.15s; display: inline-flex; align-items: center; gap: 6px; }
         button:hover { background: #0f172a; }
         button.secondary { background: #e2e8f0; color: #1e293b; }
         button.secondary:hover { background: #cbd5e1; }
         button.danger { background: #dc2626; }
         button.danger:hover { background: #b91c1c; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .file-upload-wrap {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-        .file-upload-wrap input[type="file"] {
-            flex: 1;
-            padding: 6px;
-            border: 1px dashed #94a3b8;
-            border-radius: 8px;
-            background: #f8fafc;
-        }
-        .table-wrap {
-            overflow-x: auto;
-            margin-top: 10px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            min-width: 600px;
-        }
-        th {
-            text-align: left;
-            padding: 10px 8px;
-            background: #f1f5f9;
-            font-weight: 600;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #e2e8f0;
-            vertical-align: middle;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: capitalize;
-        }
+        .file-upload-wrap { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .file-upload-wrap input[type="file"] { flex: 1; padding: 6px; border: 1px dashed #94a3b8; border-radius: 8px; background: #f8fafc; }
+        .table-wrap { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 600px; }
+        th { text-align: left; padding: 10px 8px; background: #f1f5f9; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+        .status-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
         .status-badge.available { background: #dcfce7; color: #166534; }
         .status-badge.in-use { background: #fef3c7; color: #92400e; }
         .status-badge.expired { background: #fee2e2; color: #991b1b; }
         .status-badge.used { background: #dbeafe; color: #1e40af; }
-        .editable-price {
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            padding: 2px 6px;
-            width: 80px;
-            font-size: 14px;
-            transition: 0.1s;
-        }
+        .editable-price { background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 2px 6px; width: 80px; font-size: 14px; transition: 0.1s; }
         .editable-price:hover { border-color: #94a3b8; background: white; }
         .editable-price:focus { border-color: #1e293b; background: white; outline: none; }
         .checkbox-col { width: 36px; text-align: center; }
         .checkbox-col input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
-        .batch-form {
-            background: #f8fafc;
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-top: 12px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-        }
+        .batch-form { background: #f8fafc; padding: 12px 16px; border-radius: 10px; margin-top: 12px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
         .batch-form label { font-weight: 500; font-size: 14px; }
         .batch-form select, .batch-form input { min-width: 120px; }
-        .inline-loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #e2e8f0;
-            border-top-color: #1e293b;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .msg {
-            padding: 10px 14px;
-            border-radius: 8px;
-            margin: 8px 0;
-            display: none;
-        }
+        .msg { padding: 10px 14px; border-radius: 8px; margin: 8px 0; display: none; }
         .msg.success { background: #dcfce7; color: #166534; display: block; }
         .msg.error { background: #fee2e2; color: #991b1b; display: block; }
         .msg.info { background: #dbeafe; color: #1e40af; display: block; }
         .mt-8 { margin-top: 8px; }
         .mt-16 { margin-top: 16px; }
         .text-sm { font-size: 13px; color: #64748b; }
-        .flex-space { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
         .agent-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-        .agent-chip {
-            background: #f1f5f9;
-            padding: 4px 12px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
+        .agent-chip { background: #f1f5f9; padding: 4px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
         .agent-chip .del { color: #dc2626; cursor: pointer; font-weight: 700; margin-left: 4px; }
         .agent-chip .del:hover { color: #991b1b; }
-        .settings-bar {
-            background: #f1f5f9;
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-        }
+        .settings-bar { background: #f1f5f9; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
         .settings-bar input { flex: 1; min-width: 160px; }
-        @media (max-width: 480px) {
-            .card-grid { grid-template-columns: repeat(2, 1fr); }
-            .revenue-grid { grid-template-columns: repeat(2, 1fr); }
-            .header h1 { font-size: 20px; }
-        }
+        @media (max-width: 480px) { .card-grid { grid-template-columns: repeat(2, 1fr); } .revenue-grid { grid-template-columns: repeat(2, 1fr); } .header h1 { font-size: 20px; } }
         .icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; fill: currentColor; flex-shrink: 0; }
-        .icon-sm { width: 14px; height: 14px; }
     </style>
 </head>
 <body>
 <div class="container" id="app">
     <!-- Header -->
     <div class="header">
-        <h1>
-            <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v2H4V4zm0 4h16v2H4V8zm0 4h16v2H4v-2zm0 4h10v2H4v-2zm13 0h3v2h-3v-2zm-3 4h6v2h-6v-2z"/></svg>
-            Voucher Management
-        </h1>
+        <h1><svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v2H4V4zm0 4h16v2H4V8zm0 4h16v2H4v-2zm0 4h10v2H4v-2zm13 0h3v2h-3v-2zm-3 4h6v2h-6v-2z"/></svg> Voucher Management</h1>
         <div class="header-actions">
             <span class="badge-status" id="syncStatus">Not synced</span>
             <button onclick="refreshAll()">↻ Refresh</button>
@@ -285,10 +91,9 @@
         <span style="font-size:13px; color:#64748b;" id="settingsMsg"></span>
     </div>
 
-    <!-- Message area -->
     <div id="globalMsg" class="msg"></div>
 
-    <!-- Section A: Summary Cards -->
+    <!-- Summary Cards -->
     <div class="card-grid" id="summaryCards">
         <div class="card total"><div class="num" id="totalCount">0</div><div class="label">Total</div></div>
         <div class="card available"><div class="num" id="availCount">0</div><div class="label">Available</div></div>
@@ -296,22 +101,22 @@
         <div class="card expired"><div class="num" id="expiredCount">0</div><div class="label">Expired</div></div>
     </div>
 
-    <!-- Section B: Revenue Cards (Currency changed to ₦) -->
+    <!-- Revenue Cards (Currency: NGN) -->
     <div class="card-grid revenue-grid">
-        <div class="card"><div class="num" id="revTotal">₦0.00</div><div class="label">Total Revenue</div></div>
-        <div class="card"><div class="num" id="revToday">₦0.00</div><div class="label">Today</div></div>
-        <div class="card"><div class="num" id="revYest">₦0.00</div><div class="label">Yesterday</div></div>
-        <div class="card"><div class="num" id="revWeek">₦0.00</div><div class="label">This Week</div></div>
-        <div class="card"><div class="num" id="revMonth">₦0.00</div><div class="label">This Month</div></div>
+        <div class="card"><div class="num" id="revTotal">NGN0.00</div><div class="label">Total Revenue</div></div>
+        <div class="card"><div class="num" id="revToday">NGN0.00</div><div class="label">Today</div></div>
+        <div class="card"><div class="num" id="revYest">NGN0.00</div><div class="label">Yesterday</div></div>
+        <div class="card"><div class="num" id="revWeek">NGN0.00</div><div class="label">This Week</div></div>
+        <div class="card"><div class="num" id="revMonth">NGN0.00</div><div class="label">This Month</div></div>
     </div>
 
-    <!-- Section C: Agent Performance -->
+    <!-- Agent Performance -->
     <div class="section">
         <div class="section-title">🏆 Agent Performance</div>
         <div class="table-wrap" id="agentPerfWrap"><p class="text-sm">No agents or sales yet.</p></div>
     </div>
 
-    <!-- Section D: Upload Vouchers -->
+    <!-- Upload Vouchers -->
     <div class="section">
         <div class="section-title">📄 Import Vouchers <span class="sub">Upload PDF export from Huawei eKit</span></div>
         <div class="file-upload-wrap">
@@ -322,10 +127,9 @@
         <div id="uploadMsg" class="msg mt-8"></div>
     </div>
 
-    <!-- Section E: Voucher List + Batch Sell -->
+    <!-- Voucher List -->
     <div class="section">
         <div class="section-title">🎫 Vouchers <span class="sub" id="voucherCountLabel">0 records</span></div>
-        <!-- filters -->
         <div class="flex-row">
             <select id="filterStatus"><option value="All">All Status</option><option value="available">Available</option><option value="in-use">In‑use</option><option value="expired">Expired</option><option value="used">Used</option></select>
             <select id="filterAgent"><option value="All">All Agents</option></select>
@@ -341,7 +145,7 @@
                         <th>Passcode</th>
                         <th>Status</th>
                         <th>Agent</th>
-                        <th>Price (₦)</th>
+                        <th>Price (NGN)</th>
                         <th>Sold Date</th>
                         <th>Expiry Date</th>
                         <th>Action</th>
@@ -350,17 +154,16 @@
                 <tbody id="voucherTableBody"></tbody>
             </table>
         </div>
-        <!-- Batch sell form -->
         <div class="batch-form" id="batchForm">
             <label>Selected: <span id="selectedCount">0</span></label>
             <select id="batchAgent"><option value="">-- Agent --</option></select>
-            <input type="number" id="batchPrice" placeholder="Price (₦)" step="0.5" min="0" style="width:110px;">
+            <input type="number" id="batchPrice" placeholder="Price (NGN)" step="0.5" min="0" style="width:110px;">
             <button onclick="batchAssign()">Assign to Agent</button>
             <span id="batchMsg" style="font-size:13px; color:#64748b;"></span>
         </div>
     </div>
 
-    <!-- Section G: Manage Agents -->
+    <!-- Manage Agents -->
     <div class="section">
         <div class="section-title">👤 Manage Agents</div>
         <div class="flex-row">
@@ -423,22 +226,46 @@ async function githubPut(path, content, msg) {
 async function readCSV(path) {
     const data = await githubGet(path);
     if (!data) return null;
-    const decoded = atob(data.content);
-    return decoded;
+    return atob(data.content);
 }
 
 async function writeCSV(path, csvString, commitMsg) {
     await githubPut(path, csvString, commitMsg);
 }
 
+// ============================================================
+// WORKFLOW TRIGGER (with existence check)
+// ============================================================
 async function triggerWorkflow() {
-    const url = `https://api.github.com/repos/${REPO}/actions/workflows/import.yml/dispatches`;
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Authorization': `token ${TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
-        body: JSON.stringify({ ref: 'main' })
-    });
-    if (!resp.ok) throw new Error(`Trigger workflow failed: ${resp.status}`);
+    const workflowPath = '.github/workflows/import.yml';
+    // Check if workflow file exists
+    try {
+        const checkResp = await fetch(`https://api.github.com/repos/${REPO}/contents/${workflowPath}`, {
+            headers: { 'Authorization': `token ${TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (checkResp.status === 404) {
+            throw new Error(`Workflow file '${workflowPath}' not found. Please add it to your repository and push.`);
+        }
+        if (!checkResp.ok) {
+            throw new Error(`Cannot check workflow: ${checkResp.status}`);
+        }
+        // Now trigger
+        const url = `https://api.github.com/repos/${REPO}/actions/workflows/import.yml/dispatches`;
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Authorization': `token ${TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
+            body: JSON.stringify({ ref: 'main' })
+        });
+        if (!resp.ok) {
+            let msg = `Trigger failed (${resp.status})`;
+            if (resp.status === 404) msg = `Workflow 'import.yml' not found in .github/workflows/. Ensure it has 'workflow_dispatch:' trigger.`;
+            else if (resp.status === 403) msg = `Token missing 'workflow' scope. Regenerate with 'repo' scope.`;
+            throw new Error(msg);
+        }
+        return true;
+    } catch(e) {
+        throw new Error(e.message);
+    }
 }
 
 // ============================================================
@@ -501,19 +328,17 @@ async function saveAgents() {
 }
 
 // ============================================================
-// RENDER FUNCTIONS
+// RENDER FUNCTIONS (all use "NGN")
 // ============================================================
 function getToday() {
     const d = new Date();
     return d.toISOString().split('T')[0];
 }
-
 function getDateDaysAgo(days) {
     const d = new Date();
     d.setDate(d.getDate() - days);
     return d.toISOString().split('T')[0];
 }
-
 function getWeekStart() {
     const d = new Date();
     const day = d.getDay();
@@ -521,7 +346,6 @@ function getWeekStart() {
     d.setDate(diff);
     return d.toISOString().split('T')[0];
 }
-
 function getMonthStart() {
     const d = new Date();
     d.setDate(1);
@@ -552,11 +376,11 @@ function renderRevenue() {
     const weekRev = sold.filter(v => v.sold_date >= weekStart).reduce((s, v) => s + parseFloat(v.sale_price), 0);
     const monthRev = sold.filter(v => v.sold_date >= monthStart).reduce((s, v) => s + parseFloat(v.sale_price), 0);
 
-    $('revTotal').textContent = '₦' + totalRev.toFixed(2);
-    $('revToday').textContent = '₦' + todayRev.toFixed(2);
-    $('revYest').textContent = '₦' + yestRev.toFixed(2);
-    $('revWeek').textContent = '₦' + weekRev.toFixed(2);
-    $('revMonth').textContent = '₦' + monthRev.toFixed(2);
+    $('revTotal').textContent = 'NGN' + totalRev.toFixed(2);
+    $('revToday').textContent = 'NGN' + todayRev.toFixed(2);
+    $('revYest').textContent = 'NGN' + yestRev.toFixed(2);
+    $('revWeek').textContent = 'NGN' + weekRev.toFixed(2);
+    $('revMonth').textContent = 'NGN' + monthRev.toFixed(2);
 }
 
 function renderAgentPerformance() {
@@ -573,8 +397,7 @@ function renderAgentPerformance() {
         $('agentPerfWrap').innerHTML = '<p class="text-sm">No agent sales yet.</p>';
         return;
     }
-    let html = `<table>
-        <thead><tr><th>Agent</th><th>Sold</th><th>Total Revenue</th><th>Today</th><th>Week</th><th>Month</th></tr></thead><tbody>`;
+    let html = `<table><thead><tr><th>Agent</th><th>Sold</th><th>Total Revenue</th><th>Today</th><th>Week</th><th>Month</th></tr></thead><tbody>`;
     const today = getToday();
     const weekStart = getWeekStart();
     const monthStart = getMonthStart();
@@ -586,14 +409,7 @@ function renderAgentPerformance() {
         const todayRev = agentVouchers.filter(v => v.sold_date === today).reduce((s, v) => s + parseFloat(v.sale_price || 0), 0);
         const weekRev = agentVouchers.filter(v => v.sold_date >= weekStart).reduce((s, v) => s + parseFloat(v.sale_price || 0), 0);
         const monthRev = agentVouchers.filter(v => v.sold_date >= monthStart).reduce((s, v) => s + parseFloat(v.sale_price || 0), 0);
-        html += `<tr>
-            <td><strong>${name}</strong></td>
-            <td>${stats.count}</td>
-            <td>₦${stats.revenue.toFixed(2)}</td>
-            <td>${todayCount} / ₦${todayRev.toFixed(2)}</td>
-            <td>${weekCount} / ₦${weekRev.toFixed(2)}</td>
-            <td>${monthCount} / ₦${monthRev.toFixed(2)}</td>
-        </tr>`;
+        html += `<tr><td><strong>${name}</strong></td><td>${stats.count}</td><td>NGN${stats.revenue.toFixed(2)}</td><td>${todayCount} / NGN${todayRev.toFixed(2)}</td><td>${weekCount} / NGN${weekRev.toFixed(2)}</td><td>${monthCount} / NGN${monthRev.toFixed(2)}</td></tr>`;
     });
     html += '</tbody></table>';
     $('agentPerfWrap').innerHTML = html;
@@ -610,18 +426,15 @@ function renderVoucherTable() {
         if (search && !v.passcode.includes(search)) return false;
         return true;
     });
-
     $('voucherCountLabel').textContent = filteredVouchers.length + ' records';
 
     const agentFilterSelect = $('filterAgent');
     const currentAgentVal = agentFilterSelect.value;
-    agentFilterSelect.innerHTML = '<option value="All">All Agents</option>' + 
-        agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+    agentFilterSelect.innerHTML = '<option value="All">All Agents</option>' + agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
     agentFilterSelect.value = currentAgentVal;
 
     const batchAgentSelect = $('batchAgent');
-    batchAgentSelect.innerHTML = '<option value="">-- Agent --</option>' + 
-        agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+    batchAgentSelect.innerHTML = '<option value="">-- Agent --</option>' + agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
 
     let html = '';
     filteredVouchers.forEach(v => {
@@ -634,19 +447,13 @@ function renderVoucherTable() {
             <td><strong>${v.passcode}</strong></td>
             <td><span class="status-badge ${statusClass}">${statusClass}</span></td>
             <td>${v.assigned_agent || '-'}</td>
-            <td>
-                <input class="editable-price" type="number" step="0.5" min="0" value="${priceVal.toFixed(2)}" 
-                    data-code="${v.passcode}" onchange="updatePrice('${v.passcode}', this.value)">
-            </td>
+            <td><input class="editable-price" type="number" step="0.5" min="0" value="${priceVal.toFixed(2)}" data-code="${v.passcode}" onchange="updatePrice('${v.passcode}', this.value)"></td>
             <td>${v.sold_date || '-'}</td>
             <td>${v.expiry_date || '-'}</td>
-            <td>
-                ${isAvailable ? `<button class="secondary" style="padding:2px 10px; font-size:12px;" onclick="quickSell('${v.passcode}')">Sell</button>` : '-'}
-            </td>
+            <td>${isAvailable ? `<button class="secondary" style="padding:2px 10px; font-size:12px;" onclick="quickSell('${v.passcode}')">Sell</button>` : '-'}</td>
         </tr>`;
     });
     $('voucherTableBody').innerHTML = html;
-
     $('selectedCount').textContent = selectedPasscodes.size;
 
     const allCheckboxes = document.querySelectorAll('.voucher-check');
@@ -675,10 +482,7 @@ function renderAgents() {
     let html = '';
     agents.forEach(a => {
         const sold = vouchers.filter(v => v.assigned_agent === a.name && (v.status === 'used' || v.status === 'in-use' || v.status === 'expired')).length;
-        html += `<span class="agent-chip">
-            ${a.name} (${sold} sold)
-            <span class="del" onclick="deleteAgent('${a.name}')">✕</span>
-        </span>`;
+        html += `<span class="agent-chip">${a.name} (${sold} sold) <span class="del" onclick="deleteAgent('${a.name}')">✕</span></span>`;
     });
     container.innerHTML = html;
 }
@@ -692,7 +496,7 @@ function renderAll() {
 }
 
 // ============================================================
-// ACTIONS
+// ACTIONS (with NGN)
 // ============================================================
 async function refreshAll() {
     const ok = await loadData();
@@ -702,18 +506,13 @@ async function refreshAll() {
         showMsg('globalMsg', 'Data refreshed', 'success');
     }
 }
-
-function applyFilters() {
-    renderVoucherTable();
-}
-
+function applyFilters() { renderVoucherTable(); }
 function clearFilters() {
     $('filterStatus').value = 'All';
     $('filterAgent').value = 'All';
     $('filterSearch').value = '';
     renderVoucherTable();
 }
-
 function toggleSelectAll() {
     const checked = $('selectAllCheck').checked;
     document.querySelectorAll('.voucher-check:not([disabled])').forEach(cb => {
@@ -735,7 +534,7 @@ async function updatePrice(passcode, value) {
         await saveVouchers();
         await loadData();
         renderAll();
-        showMsg('globalMsg', `Price for ${passcode} updated to ₦${price.toFixed(2)}`, 'success');
+        showMsg('globalMsg', `Price for ${passcode} updated to NGN${price.toFixed(2)}`, 'success');
     } catch(e) {
         showMsg('globalMsg', 'Error updating price: ' + e.message, 'error');
     }
@@ -747,7 +546,7 @@ async function quickSell(passcode) {
         return;
     }
     const agent = agents[0].name;
-    const price = prompt('Enter sale price for ' + passcode + ' (₦):', '5.00');
+    const price = prompt('Enter sale price for ' + passcode + ' (NGN):', '5.00');
     if (price === null) return;
     const p = parseFloat(price);
     if (isNaN(p) || p < 0) { showMsg('globalMsg', 'Invalid price.', 'error'); return; }
@@ -762,7 +561,7 @@ async function quickSell(passcode) {
         await loadData();
         selectedPasscodes.clear();
         renderAll();
-        showMsg('globalMsg', `✅ Sold ${passcode} to ${agent} for ₦${p.toFixed(2)}`, 'success');
+        showMsg('globalMsg', `✅ Sold ${passcode} to ${agent} for NGN${p.toFixed(2)}`, 'success');
     } catch(e) {
         showMsg('globalMsg', 'Error: ' + e.message, 'error');
     }
@@ -793,7 +592,7 @@ async function batchAssign() {
         await loadData();
         selectedPasscodes.clear();
         renderAll();
-        showMsg('globalMsg', `✅ Assigned ${assigned} voucher(s) to ${agent} at ₦${price.toFixed(2)} each`, 'success');
+        showMsg('globalMsg', `✅ Assigned ${assigned} voucher(s) to ${agent} at NGN${price.toFixed(2)} each`, 'success');
     } catch(e) {
         showMsg('globalMsg', 'Error: ' + e.message, 'error');
     }
@@ -876,6 +675,7 @@ async function uploadPDF() {
             $('uploadStatus').textContent = '✅ PDF uploaded, triggering OCR...';
             showMsg('uploadMsg', 'PDF uploaded. Triggering OCR workflow...', 'info');
 
+            // Trigger workflow with new check
             await triggerWorkflow();
             $('uploadStatus').textContent = '⏳ OCR running in cloud (approx 30‑60s)...';
             showMsg('uploadMsg', 'Workflow triggered. Check back in about 1 minute and click Refresh.', 'success');
@@ -905,21 +705,15 @@ function saveSettings() {
     $('settingsMsg').textContent = '✅ Saved. Loading data...';
     refreshAll();
 }
-
 function resetSettings() {
     localStorage.removeItem('voucher_repo');
     localStorage.removeItem('voucher_token');
-    REPO = '';
-    TOKEN = '';
-    $('repoInput').value = '';
-    $('tokenInput').value = '';
+    REPO = ''; TOKEN = '';
+    $('repoInput').value = ''; $('tokenInput').value = '';
     $('settingsMsg').textContent = 'Settings cleared.';
     syncStatus.textContent = '⚠️ Set repo & token';
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
 function showMsg(id, text, type) {
     const el = $(id);
     el.textContent = text;
