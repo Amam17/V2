@@ -3,6 +3,11 @@ name: Import Vouchers
 on:
   workflow_dispatch:
 
+# GRANT WRITE PERMISSIONS
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   import:
     runs-on: ubuntu-latest
@@ -35,4 +40,4 @@ jobs:
           git config --global user.email "actions@github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git add vouchers.csv
-          git diff --staged --quiet || (git commit -m "Auto-import vouchers from PDF" && git push)
+          git diff --staged --quiet || (git commit -m "Auto-import vouchers from PDF" && git push) 
