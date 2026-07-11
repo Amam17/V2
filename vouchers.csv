@@ -488,4 +488,4 @@ passcode,generation_date,validity_days,expiry_date,status,sale_price,sold_date,a
 69255228,2026-07-11,30,2026-08-10,available,0.00,,
 44436272,2026-07-11,30,2026-08-10,available,0.00,,
 92786964,2026-07-11,30,2026-08-10,available,0.00,,
-42254637,2026-07-11,30,2026-08-10,used,300,2026-07-11,Musty
+42254637,2026-07-11,30,2026-08-10,used,0,2026-07-11,Musty
