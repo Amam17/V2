@@ -28,45 +28,48 @@ def extract_from_image(img):
     _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
     text = pytesseract.image_to_string(thresh, lang='eng')
     
-    # Debug: print first 500 chars to logs
-    print("=== RAW OCR TEXT (first 500 chars) ===")
-    print(text[:500])
-    print("=======================================")
-    
-    # More flexible patterns
-    pattern_new = r"Passcode[:\s]*(\d{8}).*?Validity\s*period[:\s]*([0-9]+)\s*days"
-    pattern_used = r"Passcode[:\s]*(\d{8}).*?Expiration\s*time[:\s]*([\d\-:\s]+)"
+    # Split text into blocks starting with "Passcode"
+    # This captures each voucher entry as a separate block
+    block_pattern = r"Passcode[:\s]*(\d{8})(.*?)(?=Passcode[:\s]*\d{8}|$)"
+    blocks = re.findall(block_pattern, text, re.DOTALL | re.IGNORECASE)
     
     matches = []
-    new_matches = re.findall(pattern_new, text, re.DOTALL | re.IGNORECASE)
-    for code, days in new_matches:
-        matches.append({
-            'passcode': code.strip(),
-            'type': 'new',
-            'days': int(days.strip())
-        })
-    
-    used_matches = re.findall(pattern_used, text, re.DOTALL | re.IGNORECASE)
-    for code, exp_time in used_matches:
-        if not any(m['passcode'] == code.strip() for m in matches):
-            matches.append({
-                'passcode': code.strip(),
-                'type': 'used',
-                'expiration': exp_time.strip()
-            })
-    
-    # Fallback: if no matches, try extracting just 8-digit codes near "Passcode"
-    if len(matches) == 0:
-        fallback_pattern = r"Passcode[:\s]*(\d{8})"
-        fallback_matches = re.findall(fallback_pattern, text, re.IGNORECASE)
-        for code in fallback_matches:
+    for code, rest in blocks:
+        # Extract price (e.g., "#300" or "# 500")
+        price_match = re.search(r'#\s*([\d.]+)', rest)
+        price = price_match.group(1) if price_match else '0.00'
+        
+        # Check if it's a new voucher (has Validity period)
+        validity_match = re.search(r'Validity\s*period[:\s]*([0-9]+)\s*days', rest, re.IGNORECASE)
+        if validity_match:
+            days = int(validity_match.group(1))
             matches.append({
                 'passcode': code.strip(),
                 'type': 'new',
-                'days': 30
+                'days': days,
+                'price': price
             })
-        if fallback_matches:
-            print(f"⚠️ Fallback: extracted {len(fallback_matches)} vouchers using simple pattern.")
+            continue
+        
+        # Check if it's a used voucher (has Expiration time)
+        exp_match = re.search(r'Expiration\s*time[:\s]*([\d\-:\s]+)', rest, re.IGNORECASE)
+        if exp_match:
+            exp_time = exp_match.group(1).strip()
+            matches.append({
+                'passcode': code.strip(),
+                'type': 'used',
+                'expiration': exp_time,
+                'price': price
+            })
+            continue
+        
+        # Fallback: if no pattern matched, treat as new with 30 days
+        matches.append({
+            'passcode': code.strip(),
+            'type': 'new',
+            'days': 30,
+            'price': price
+        })
     
     return matches
 
@@ -81,32 +84,26 @@ def load_existing_vouchers():
                 existing[row['passcode']] = row
         return existing
 
-def append_vouchers(new_vouchers):
+def append_or_update_vouchers(new_vouchers):
     existing = load_existing_vouchers()
     today = datetime.now().date().isoformat()
     
-    rows = []
-    duplicates = 0
+    new_rows = []
+    updated_rows = 0
+    
     for item in new_vouchers:
         code = item['passcode']
-        if code in existing:
-            duplicates += 1
-            continue
+        price = item.get('price', '0.00')
         
+        # Determine the new data for this voucher
         if item['type'] == 'new':
             days = item['days']
             expiry = (datetime.now().date() + timedelta(days=days)).isoformat()
-            row = {
-                'passcode': code,
-                'generation_date': today,
-                'validity_days': days,
-                'expiry_date': expiry,
-                'status': 'available',
-                'sale_price': '0.00',
-                'sold_date': '',
-                'assigned_agent': ''
-            }
-        else:
+            status = 'available'
+            generation_date = today
+            validity_days = days
+            exp_date = expiry
+        else:  # used
             exp_str = item['expiration']
             try:
                 exp_dt = datetime.strptime(exp_str, '%Y-%m-%d %H:%M:%S')
@@ -116,23 +113,44 @@ def append_vouchers(new_vouchers):
                     status = 'expired'
             except:
                 status = 'expired'
-            row = {
+            exp_date = exp_str
+            generation_date = ''
+            validity_days = ''
+        
+        # Check if passcode exists
+        if code in existing:
+            # UPDATE existing record
+            existing[code]['status'] = status
+            existing[code]['expiry_date'] = exp_date
+            existing[code]['validity_days'] = validity_days
+            existing[code]['generation_date'] = generation_date
+            
+            # ONLY update price if existing price is 0 or empty
+            # This preserves any manual price the user might have set
+            existing_price = float(existing[code].get('sale_price', '0') or '0')
+            if existing_price == 0:
+                existing[code]['sale_price'] = price
+            
+            updated_rows += 1
+        else:
+            # ADD new voucher
+            new_row = {
                 'passcode': code,
-                'generation_date': '',
-                'validity_days': '',
-                'expiry_date': exp_str,
+                'generation_date': generation_date,
+                'validity_days': validity_days,
+                'expiry_date': exp_date,
                 'status': status,
-                'sale_price': '0.00',
+                'sale_price': price,
                 'sold_date': '',
                 'assigned_agent': ''
             }
-        rows.append(row)
+            new_rows.append(new_row)
     
-    if not rows:
-        print(f"No new vouchers to add. {duplicates} duplicates skipped.")
+    if not new_rows and updated_rows == 0:
+        print("No changes detected.")
         return
     
-    all_vouchers = list(existing.values()) + rows
+    all_vouchers = list(existing.values()) + new_rows
     
     headers = ['passcode', 'generation_date', 'validity_days', 'expiry_date', 
                'status', 'sale_price', 'sold_date', 'assigned_agent']
@@ -141,7 +159,9 @@ def append_vouchers(new_vouchers):
         writer.writeheader()
         writer.writerows(all_vouchers)
     
-    print(f"Added {len(rows)} new vouchers. Skipped {duplicates} duplicates. Total: {len(all_vouchers)}")
+    print(f"✅ Updated {updated_rows} existing vouchers.")
+    print(f"✅ Added {len(new_rows)} new vouchers.")
+    print(f"📊 Total vouchers in system: {len(all_vouchers)}")
 
 def main():
     if not os.path.exists(PDF_FILE):
@@ -162,7 +182,7 @@ def main():
     print(f"\nTotal extracted: {len(all_extracted)} voucher entries.")
     
     if all_extracted:
-        append_vouchers(all_extracted)
+        append_or_update_vouchers(all_extracted)
     else:
         print("No vouchers found in PDF.")
 
